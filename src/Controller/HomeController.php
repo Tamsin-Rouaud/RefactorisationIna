@@ -52,11 +52,15 @@ class HomeController extends AbstractController
 
         $albums = $albumRepo->findAll();
         $album = $id ? $albumRepo->find($id) : null;
-        $user = $userRepo->findOneByAdmin(true);
 
+         // remplace findOneByAdmin(true)
+        $user = $userRepo->findOneBy(['admin' => true]);
+
+
+        // remplace findByAlbum() et findByUser()
         $medias = $album
-            ? $mediaRepo->findByAlbum($album)
-            : $mediaRepo->findByUser($user);
+            ? $mediaRepo->findBy(['album' => $album])
+            : $mediaRepo->findBy(['user' => $user]);
 
         return $this->render('front/portfolio.html.twig', [
             'albums' => $albums,

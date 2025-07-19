@@ -33,7 +33,7 @@ class MediaController extends AbstractController
             25 * ($page - 1)
         );
         
-        // ⚠️ Remplace la méthode count() par un simple count() PHP
+        // Remplace la méthode count() par un simple count() PHP
         $total = count($mediaRepo->findBy($criteria));
 
         return $this->render('admin/media/index.html.twig', [

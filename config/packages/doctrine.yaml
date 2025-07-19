@@ -9,7 +9,7 @@ doctrine:
         naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
         auto_mapping: true
         controller_resolver:
-            auto_mapping: true   # ✅ pour supprimer la dépréciation
+            auto_mapping: false   # pour supprimer la dépréciation
         mappings:
             App:
                 is_bundle: false

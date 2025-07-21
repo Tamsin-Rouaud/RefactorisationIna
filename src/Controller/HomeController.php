@@ -20,7 +20,11 @@ class HomeController extends AbstractController
     #[Route('/guests', name: 'guests')]
     public function guests(ManagerRegistry $doctrine)
     {
-        $guests = $doctrine->getRepository(User::class)->findBy(['admin' => false]);
+        $guests = $doctrine->getRepository(User::class)->findBy([
+            'admin' => false,
+            'isBlocked' => false,
+        ]);
+
         return $this->render('front/guests.html.twig', [
             'guests' => $guests
         ]);
@@ -30,6 +34,15 @@ class HomeController extends AbstractController
     public function guest(ManagerRegistry $doctrine, int $id)
     {
         $guest = $doctrine->getRepository(User::class)->find($id);
+
+        if (!$guest || $guest->isBlocked() && !$this->isGranted('ROLE_ADMIN')) {
+            throw $this->createNotFoundException('Cet invité n’est pas accessible.');
+        }
+
+        return $this->render('front/guest.html.twig', [
+            'guest' => $guest
+        ]);
+
         return $this->render('front/guest.html.twig', [
             'guest' => $guest
         ]);

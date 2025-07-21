@@ -34,7 +34,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $password = null;
 
-    #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'user')]
+    #[ORM\Column(type: 'boolean')]
+    private bool $isBlocked = false;
+
+    #[ORM\OneToMany(targetEntity: Media::class, cascade: ['remove'], mappedBy: 'user')]
     private Collection $medias;
 
     public function __construct()
@@ -103,4 +106,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         return null;
     }
+
+
+
+    public function isBlocked(): bool
+    {
+        return $this->isBlocked;
+    }
+
+    public function setIsBlocked(bool $isBlocked): self
+    {
+        $this->isBlocked = $isBlocked;
+        return $this;
+    }
+
 }

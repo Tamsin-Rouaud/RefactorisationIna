@@ -17,6 +17,7 @@ class UserFixtures extends Fixture
     {
         // Admin Ina
         $ina = new User();
+        
         $ina->setEmail('ina@example.com');
         $ina->setName('Inatest Zaoui');
         $ina->setAdmin(true);

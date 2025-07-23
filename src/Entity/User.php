@@ -40,9 +40,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Media::class, cascade: ['remove'], mappedBy: 'user')]
     private Collection $medias;
 
+    /**
+     * @var Collection<int, Album>
+     */
+    #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'user')]
+    private Collection $albums;
+
     public function __construct()
     {
         $this->medias = new ArrayCollection();
+        $this->albums = new ArrayCollection();
     }
 
     public function getId(): ?int { return $this->id; }
@@ -117,6 +124,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setIsBlocked(bool $isBlocked): self
     {
         $this->isBlocked = $isBlocked;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Album>
+     */
+    public function getAlbums(): Collection
+    {
+        return $this->albums;
+    }
+
+    public function addAlbum(Album $album): static
+    {
+        if (!$this->albums->contains($album)) {
+            $this->albums->add($album);
+            $album->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAlbum(Album $album): static
+    {
+        if ($this->albums->removeElement($album)) {
+            // set the owning side to null (unless already changed)
+            if ($album->getUser() === $this) {
+                $album->setUser(null);
+            }
+        }
+
         return $this;
     }
 

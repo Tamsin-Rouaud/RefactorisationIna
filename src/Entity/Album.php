@@ -3,6 +3,9 @@
 namespace App\Entity;
 
 use App\Repository\AlbumRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
@@ -15,6 +18,24 @@ class Album
 
     #[ORM\Column]
     private string $name;
+
+    #[ORM\OneToMany(mappedBy: "album", targetEntity: Media::class, cascade: ['remove'])]
+    private Collection $medias;
+
+    public function __construct()
+{
+    $this->medias = new ArrayCollection();
+}
+
+public function getMedias(): Collection
+{
+    return $this->medias;
+}
+
+    #[ORM\ManyToOne(inversedBy: 'albums')]
+    private ?User $user = null;
+
+
 
     public function getId(): ?int
     {
@@ -30,4 +51,39 @@ class Album
     {
         $this->name = $name;
     }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): self
+    {
+        $this->user = $user;
+
+        return $this;
+    }
+
+    public function addMedia(Media $media): static
+{
+    if (!$this->medias->contains($media)) {
+        $this->medias->add($media);
+        $media->setAlbum($this);
+    }
+
+    return $this;
+}
+
+public function removeMedia(Media $media): static
+{
+    if ($this->medias->removeElement($media)) {
+        // set the owning side to null (unless already changed)
+        if ($media->getAlbum() === $this) {
+            $media->setAlbum(null);
+        }
+    }
+
+    return $this;
+}
+
 }

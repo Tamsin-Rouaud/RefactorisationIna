@@ -8,7 +8,9 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
+#[UniqueEntity(fields: ['email'], message: 'Cet email est déjà utilisé.')]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 
@@ -43,7 +45,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @var Collection<int, Album>
      */
-    #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'user')]
+    #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'user', cascade:['remove'])]
     private Collection $albums;
 
     public function __construct()

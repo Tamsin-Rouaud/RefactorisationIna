@@ -53,10 +53,7 @@ class MediaController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if (!$this->isGranted('ROLE_ADMIN')) {
-                $media->setUser($this->getUser());
-            }
-
+         
             $file = $media->getFile();
             if ($file) {
                 $filename = md5(uniqid()) . '.' . $file->guessExtension();
@@ -70,6 +67,7 @@ class MediaController extends AbstractController
             $em->persist($media);
             $em->flush();
 
+
             return $this->redirectToRoute('admin_media_index');
         }
 
@@ -79,24 +77,30 @@ class MediaController extends AbstractController
     }
 
     #[Route('/admin/media/delete/{id}', name: 'admin_media_delete')]
-    public function delete(int $id, ManagerRegistry $doctrine): Response
-    {
-        $media = $doctrine->getRepository(Media::class)->find($id);
-        if (!$media) {
-            throw $this->createNotFoundException('Média introuvable');
-        }
-
-        $em = $doctrine->getManager();
-        $em->remove($media);
-        $em->flush();
-
-        $path = $media->getPath();
-        $fullPath = $this->params->get('upload_dir') . '/' . basename($path);
-
-        if (file_exists($fullPath) && is_file($fullPath)) {
-            unlink($fullPath);
-        }
-
-        return $this->redirectToRoute('admin_media_index');
+public function delete(int $id, ManagerRegistry $doctrine): Response
+{
+    $media = $doctrine->getRepository(Media::class)->find($id);
+    if (!$media) {
+        throw $this->createNotFoundException('Média introuvable');
     }
+
+    // Vérification des droits d'accès
+    if (!$this->isGranted('ROLE_ADMIN') && $media->getUser() !== $this->getUser()) {
+        throw $this->createAccessDeniedException();
+    }
+
+    $em = $doctrine->getManager();
+    $em->remove($media);
+    $em->flush();
+
+    $path = $media->getPath();
+    $fullPath = $this->params->get('upload_dir') . '/' . basename($path);
+
+    if (file_exists($fullPath) && is_file($fullPath)) {
+        unlink($fullPath);
+    }
+
+    return $this->redirectToRoute('admin_media_index');
+}
+
 }

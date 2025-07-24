@@ -19,14 +19,17 @@ class Media
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "medias", fetch: "EAGER")]
     private ?User $user = null;
 
+    #[Assert\NotNull(message: 'L’album est obligatoire.')]
     #[ORM\ManyToOne(targetEntity: Album::class, fetch: "EAGER")]
     private ?Album $album = null;
 
     #[ORM\Column]
     private string $path;
 
-    #[ORM\Column]
-    private string $title;
+    #[ORM\Column(type: 'string')]
+    #[Assert\NotBlank(message: 'Le titre est obligatoire.')]
+    private ?string $title = null;
+
 
     #[MapUploadedFile]
     #[Assert\Image(

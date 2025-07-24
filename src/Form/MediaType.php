@@ -11,6 +11,7 @@ use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Image;
 
 class MediaType extends AbstractType
 {
@@ -19,28 +20,29 @@ class MediaType extends AbstractType
         $builder
             ->add('file', FileType::class, [
                 'label' => 'Image',
+                'required' => false,
+                
             ])
             ->add('title', TextType::class, [
                 'label' => 'Titre',
-            ])
-        ;
+            ]);
 
         if ($options['is_admin']) {
-            $builder
-                ->add('user', EntityType::class, [
-                    'label' => 'Utilisateur',
-                    'required' => false,
-                    'class' => User::class,
-                    'choice_label' => 'name',
-                ])
-                ->add('album', EntityType::class, [
-                    'label' => 'Album',
-                    'required' => false,
-                    'class' => Album::class,
-                    'choice_label' => 'name',
-                ])
-            ;
+            $builder->add('user', EntityType::class, [
+                'label' => 'Utilisateur',
+                'required' => false,
+                'class' => User::class,
+                'choice_label' => 'name',
+            ]);
         }
+
+        // ✅ Affiché pour tous
+        $builder->add('album', EntityType::class, [
+            'label' => 'Album',
+            'required' => true,
+            'class' => Album::class,
+            'choice_label' => 'name',
+        ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

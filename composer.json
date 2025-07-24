@@ -92,6 +92,7 @@
 		}
 	},
 	"require-dev": {
+		"dama/doctrine-test-bundle": "^8.2",
 		"doctrine/data-fixtures": "2.0",
 		"doctrine/doctrine-fixtures-bundle": "4.0",
 		"phpunit/phpunit": "^9.5",

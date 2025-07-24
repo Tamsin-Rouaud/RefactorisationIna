@@ -177,4 +177,47 @@ class AdminGuestControllerTest extends WebTestCase
             }
         }
     }
+
+public function testToggleBlockWithInvalidIdReturns404(): void
+{
+    $this->loginAsName('Inatest Zaoui');
+    $this->client->request('GET', '/admin/guests/999999/toggle-block'); // ID qui n'existe pas
+    $this->assertResponseStatusCodeSame(404);
+}
+
+public function testGuestCannotDeleteGuest(): void
+{
+    $this->loginAsName('Jean Dupont');
+
+    $guest = $this->userRepository->findOneByEmail('invite1@example.com');
+    $this->assertNotNull($guest);
+
+    $this->client->request('POST', '/admin/guests/' . $guest->getId() . '/delete');
+    $this->assertResponseStatusCodeSame(403);
+}
+
+public function testDeletingNonExistentGuestReturns404(): void
+{
+    $this->loginAsName('Inatest Zaoui');
+    $this->client->request('POST', '/admin/guests/999999/delete');
+    $this->assertResponseStatusCodeSame(404);
+}
+
+
+    public function testAdminCannotAddGuestWithInvalidData(): void
+{
+    $this->loginAsName('Inatest Zaoui');
+    $crawler = $this->client->request('GET', '/admin/guests/new');
+    $form = $crawler->selectButton('Créer un invité')->form([
+        'guest[name]' => '', // Nom vide
+        'guest[email]' => 'bademail', // Mauvais format
+        'guest[password]' => '',
+    ]);
+    $crawler = $this->client->submit($form);
+    
+
+    $this->assertSelectorExists('.invalid-feedback');
+
+}
+
 }

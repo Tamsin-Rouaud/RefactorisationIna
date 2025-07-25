@@ -5,14 +5,23 @@
         <div class="col-12">
             <h3 class="mb-5">Invités</h3>
             <div class="guests d-flex flex-column">
-                {% for guest in guests %}
+                {% for guest in pagination %}
+
+
                     <div class="guest py-5 d-flex justify-content-between align-items-center">
                         <h4>{{ guest.name }} ({{ guest.medias|length }})</h4>
                         <a href="{{ path('guest', {id: guest.id}) }}">découvrir</a>
                     </div>
+                    
                 {% endfor %}
+                
             </div>
+            
         </div>
+        
     </div>
+    <div class="pagination">
+                    {{ knp_pagination_render(pagination) }}
+                </div>
 {% endblock %}
 

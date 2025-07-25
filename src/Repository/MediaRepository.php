@@ -21,28 +21,28 @@ class MediaRepository extends ServiceEntityRepository
         parent::__construct($registry, Media::class);
     }
 
-//    /**
-//     * @return Media[] Returns an array of Media objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('m')
-//            ->andWhere('m.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('m.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
 
-//    public function findOneBySomeField($value): ?Media
-//    {
-//        return $this->createQueryBuilder('m')
-//            ->andWhere('m.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+public function findByAlbumQuery($album)
+{
+    return $this->createQueryBuilder('m')
+        ->leftJoin('m.album', 'a')
+        ->addSelect('a')
+        ->where('m.album = :album')
+        ->setParameter('album', $album)
+        ->orderBy('m.id', 'ASC')
+        ->getQuery();
+}
+
+public function findByUserQuery($user)
+{
+    return $this->createQueryBuilder('m')
+        ->leftJoin('m.user', 'u')
+        ->addSelect('u')
+        ->where('m.user = :user')
+        ->setParameter('user', $user)
+        ->orderBy('m.id', 'ASC')
+        ->getQuery();
+}
+
+
 }

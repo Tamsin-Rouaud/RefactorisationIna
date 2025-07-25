@@ -6,7 +6,6 @@ use App\Entity\Album;
 use App\Entity\Media;
 use App\Entity\User;
 use App\Repository\UserRepository;
-use App\Repository\MediaRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -21,15 +20,7 @@ class HomeController extends AbstractController
         return $this->render('front/home.html.twig');
     }
 
-//     #[Route('/guests', name: 'guests')]
-// public function guests(UserRepository $userRepository)
-// {
-//     $guests = $userRepository->findActiveGuestsWithRelations();
 
-//     return $this->render('front/guests.html.twig', [
-//         'guests' => $guests
-//     ]);
-// }
 
 #[Route('/guests', name: 'guests')]
 public function guests(UserRepository $userRepository, PaginatorInterface $paginator, Request $request)
@@ -47,24 +38,7 @@ public function guests(UserRepository $userRepository, PaginatorInterface $pagin
     ]);
 }
 
-    // #[Route('/guest/{id}', name: 'guest')]
-    // public function guest(ManagerRegistry $doctrine, int $id)
-    // {
-    //     $guest = $doctrine->getRepository(User::class)->find($id);
-
-    //     if (!$guest || $guest->isBlocked() && !$this->isGranted('ROLE_ADMIN')) {
-    //         throw $this->createNotFoundException('Cet invité n’est pas accessible.');
-    //     }
-
-    //     return $this->render('front/guest.html.twig', [
-    //         'guest' => $guest
-    //     ]);
-
-    //     return $this->render('front/guest.html.twig', [
-    //         'guest' => $guest
-    //     ]);
-    // }
-
+   
     #[Route('/guest/{id}', name: 'guest')]
 public function guest(
     UserRepository $userRepository,

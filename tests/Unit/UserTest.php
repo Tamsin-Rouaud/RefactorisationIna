@@ -72,11 +72,15 @@ class UserTest extends TestCase
 {
     $user = new User();
 
-    $media1 = $this->createMock(\App\Entity\Media::class);
-    $media2 = $this->createMock(\App\Entity\Media::class);
+    $media1 = new \App\Entity\Media();
+$media2 = new \App\Entity\Media();
+
 
     $collection = new \Doctrine\Common\Collections\ArrayCollection([$media1, $media2]);
 
+    /**
+ * @param Collection<int, object> $medias
+ */
     $user->setMedias($collection);
 
     $this->assertCount(2, $user->getMedias());

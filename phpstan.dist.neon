@@ -1,0 +1,11 @@
+parameters:
+    level: 6
+    paths:
+        - bin/
+        - config/
+        - public/
+        - src/
+        - tests/
+    ignoreErrors:
+        - '#Property App\\Entity\\.*::\$id is never written, only read#'
+        - '#Property App\\Entity\\Album::\$id \(int\|null\) is never assigned int#'

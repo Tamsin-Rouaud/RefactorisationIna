@@ -19,7 +19,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
+   private int $id;
+
 
     #[ORM\Column]
     private bool $admin = false;
@@ -39,6 +40,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'boolean')]
     private bool $isBlocked = false;
 
+    /** @var Collection<int, Media> */
     #[ORM\OneToMany(targetEntity: Media::class, cascade: ['remove'], mappedBy: 'user')]
     private Collection $medias;
 
@@ -72,9 +74,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setDescription(?string $description): void { $this->description = $description; }
 
-    public function getMedias(): Collection { return $this->medias; }
+/**
+ * @return Collection<int, Media>
+ */
+public function getMedias(): Collection
+{
+    return $this->medias;
+}
 
-    public function setMedias(Collection $medias): void { $this->medias = $medias; }
+/**
+ * @param Collection<int, Media> $medias
+ */
+public function setMedias(Collection $medias): void
+{
+    $this->medias = $medias;
+}
+
 
     public function isAdmin(): bool { return $this->admin; }
 

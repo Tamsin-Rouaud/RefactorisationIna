@@ -10,6 +10,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 abstract class CustomWebTestCase extends WebTestCase
 {
+    /**
+ * @param string[] $fixtureServiceIds
+ */
     protected function loadFixtures(array $fixtureServiceIds, ContainerInterface $container): void
     {
         $em = $container->get(EntityManagerInterface::class);

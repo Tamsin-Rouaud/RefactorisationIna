@@ -24,7 +24,10 @@ class AdminGuestControllerTest extends CustomWebTestCase
         ], $container);
 
         $this->em = $container->get('doctrine')->getManager();
-        $this->userRepository = $this->em->getRepository(User::class);
+        /** @var UserRepository $repo */
+$repo = self::getContainer()->get(UserRepository::class);
+$this->userRepository = $repo;
+
     }
 
     private function loginAsName(string $name): User

@@ -4,7 +4,10 @@ namespace App\Repository;
 
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Query;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Knp\Component\Pager\Event\Subscriber\Paginate\Doctrine\ODM\MongoDB\QueryBuilderSubscriber;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
@@ -12,13 +15,14 @@ use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 /**
  * @extends ServiceEntityRepository<User>
  *
- * @implements PasswordUpgraderInterface<User>
- *
  * @method User|null find($id, $lockMode = null, $lockVersion = null)
  * @method User|null findOneBy(array $criteria, array $orderBy = null)
  * @method User[]    findAll()
  * @method User[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method User[]    findBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null, $limit = null, $offset = null)
+ * @method User|null findOneBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null)
  */
+
 class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -42,19 +46,17 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
 
 
 
-
-
-public function getActiveGuestsQuery()
+public function getActiveGuestsQuery(): QueryBuilder
 {
     return $this->createQueryBuilder('u')
-        ->leftJoin('u.medias', 'm')       
+        ->leftJoin('u.medias', 'm')
         ->addSelect('m')
         ->leftJoin('u.albums', 'a')
         ->addSelect('a')
         ->where('u.admin = false')
-        ->andWhere('u.isBlocked = false')
-        ->getQuery();
+        ->andWhere('u.isBlocked = false');
 }
+
 
 public function findWithMedias(int $id): ?User
 {

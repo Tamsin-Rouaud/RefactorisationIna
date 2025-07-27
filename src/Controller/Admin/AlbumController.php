@@ -54,14 +54,20 @@ class AlbumController extends AbstractController
         return $this->render('admin/album/update.html.twig', ['form' => $form->createView()]);
     }
 
-    #[Route('/admin/album/delete/{id}', name: 'admin_album_delete')]
-    public function delete(int $id, ManagerRegistry $doctrine):Response
-    {
-        $album = $doctrine->getRepository(Album::class)->find($id);
-        $em = $doctrine->getManager();
-        $em->remove($album);
-        $em->flush();
+   #[Route('/admin/album/delete/{id}', name: 'admin_album_delete')]
+public function delete(int $id, ManagerRegistry $doctrine): Response
+{
+    $album = $doctrine->getRepository(Album::class)->find($id);
 
-        return $this->redirectToRoute('admin_album_index');
+    if (!$album) {
+        throw $this->createNotFoundException('Album introuvable.');
     }
+
+    $em = $doctrine->getManager();
+    $em->remove($album);
+    $em->flush();
+
+    return $this->redirectToRoute('admin_album_index');
+}
+
 }

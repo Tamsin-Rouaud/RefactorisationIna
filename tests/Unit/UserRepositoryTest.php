@@ -17,35 +17,54 @@ class UserRepositoryTest extends KernelTestCase
     protected function setUp(): void
     {
         self::bootKernel();
-        $this->em = static::getContainer()->get('doctrine')->getManager();
-        $this->repository = static::getContainer()->get(UserRepository::class);
+        
+        /** @var \Doctrine\Persistence\ManagerRegistry $registry */
+        $registry = static::getContainer()->get('doctrine');
+
+        $em = $registry->getManager();
+        if (!$em instanceof EntityManagerInterface) {
+            throw new \RuntimeException('Le manager Doctrine n’est pas un EntityManagerInterface.');
+        }
+
+        $this->em = $em;
+
+        /** @var UserRepository $repo */
+        $repo = $registry->getRepository(User::class);
+        $this->repository = $repo;
     }
 
     public function testUpgradePasswordWithValidUser(): void
     {
-        // Crée un utilisateur
         $user = new User();
         $user->setName('TestUser');
         $user->setEmail('test@example.com');
         $user->setPassword('old_password');
+
         $this->em->persist($user);
         $this->em->flush();
 
-        // Nouvelle version du mot de passe
         $newHashedPassword = 'new_hashed_password';
 
         $this->repository->upgradePassword($user, $newHashedPassword);
 
-        // Recharge l’utilisateur depuis la base
+        /** @var User|null $updatedUser */
         $updatedUser = $this->repository->find($user->getId());
+
+        $this->assertNotNull($updatedUser);
         $this->assertSame($newHashedPassword, $updatedUser->getPassword());
     }
 
-    public function testUpgradePasswordThrowsExceptionWithInvalidUser(): void
-    {
-        $stub = $this->createStub(PasswordAuthenticatedUserInterface::class);
+   public function testUpgradePasswordThrowsExceptionWithInvalidUser(): void
+{
+    $stub = new class implements PasswordAuthenticatedUserInterface {
+        public function getPassword(): string
+        {
+            return 'irrelevant';
+        }
+    };
 
-        $this->expectException(UnsupportedUserException::class);
-        $this->repository->upgradePassword($stub, 'irrelevant');
-    }
+    $this->expectException(UnsupportedUserException::class);
+    $this->repository->upgradePassword($stub, 'irrelevant');
+}
+
 }

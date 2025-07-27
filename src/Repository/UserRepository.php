@@ -60,13 +60,16 @@ public function getActiveGuestsQuery(): QueryBuilder
 
 public function findWithMedias(int $id): ?User
 {
-    return $this->createQueryBuilder('u')
+    $result = $this->createQueryBuilder('u')
         ->leftJoin('u.medias', 'm')
         ->addSelect('m')
         ->where('u.id = :id')
         ->setParameter('id', $id)
         ->getQuery()
         ->getOneOrNullResult();
+
+    return $result instanceof User ? $result : null;
 }
+
 
 }

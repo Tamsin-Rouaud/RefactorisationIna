@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[UniqueEntity(fields: ['email'], message: 'Cet email est déjà utilisé.')]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -25,16 +26,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private bool $admin = false;
 
-    #[ORM\Column(unique: true)]
-    private ?string $name;
+    #[ORM\Column(unique: true, nullable: false)]
+    #[Assert\NotBlank(message: 'Le nom est obligatoire.')]
+    private ?string $name = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description;
 
-    #[ORM\Column(length: 180, unique: true)]
+    #[ORM\Column(length: 180, unique: true, nullable: false)]
+    #[Assert\NotBlank(message: 'L’email est obligatoire.')]
+    #[Assert\Email(message: 'L’email est invalide.')]
     private ?string $email = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
+    #[Assert\NotBlank(message: 'Le mot de passe est obligatoire.')]
     private ?string $password = null;
 
     #[ORM\Column(type: 'boolean')]
@@ -97,17 +102,19 @@ public function setMedias(Collection $medias): void
 
     // === Méthodes exigées par Symfony Security ===
 
-    public function getUserIdentifier(): string
-    {
-        return $this->name ?? '';
-    }
+public function getUserIdentifier(): string
+{
+    return !empty($this->name) ? $this->name : 'utilisateur';
+}
+
+
 
     public function getPassword(): string
-    {
-        return $this->password;
-    }
+{
+    return $this->password ?? '';
+}
 
-    public function setPassword(string $password): self
+    public function setPassword(?string $password): self
     {
         $this->password = $password;
         return $this;

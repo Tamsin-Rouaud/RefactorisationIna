@@ -61,8 +61,7 @@ public function guest(UserRepository $userRepository, PaginatorInterface $pagina
         'pagination' => $pagination
     ]);
 }
-
-    #[Route('/portfolio/{id}', name: 'portfolio')]
+#[Route('/portfolio/{id}', name: 'portfolio')]
 public function portfolio(
     AlbumRepository $albumRepo,
     UserRepository $userRepo,
@@ -71,29 +70,33 @@ public function portfolio(
     Request $request,
     ?int $id = null
 ): Response {
-
-
     $albums = $albumRepo->findAll();
     $album = $id ? $albumRepo->find($id) : null;
-    $user = $userRepo->findOneBy(['admin' => true]);
 
-$query = $album
-    ? $mediaRepo->findByAlbumQuery($album)
-    : $mediaRepo->findByUserQuery($user);
+    if ($album === null) {
+        $user = $userRepo->findOneBy(['admin' => true]);
+        if (!$user) {
+            throw $this->createNotFoundException("Administrateur introuvable pour afficher les médias.");
+        }
 
-$pagination = $paginator->paginate(
-    $query,
-    $request->query->getInt('page', 1),
-    9
-);
+        $query = $mediaRepo->findByUserQuery($user);
+    } else {
+        $query = $mediaRepo->findByAlbumQuery($album);
+    }
 
+    $pagination = $paginator->paginate(
+        $query,
+        $request->query->getInt('page', 1),
+        9
+    );
 
     return $this->render('front/portfolio.html.twig', [
         'albums' => $albums,
         'album' => $album,
-        'pagination' => $pagination
+        'pagination' => $pagination,
     ]);
 }
+
 
     #[Route('/about', name: 'about')]
     public function about(): Response

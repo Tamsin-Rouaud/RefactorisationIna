@@ -13,29 +13,38 @@ class SecurityControllerTest extends WebTestCase
 {
     private static bool $fixturesLoaded = false;
 
-    private function loadFixturesOnce(): void
-    {
-        if (self::$fixturesLoaded) {
-            return;
-        }
-
-        self::bootKernel();
-        $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
-
-        $loader = new Loader();
-        $loader->addFixture(new UserFixtures(
-            $container->get('security.user_password_hasher')
-        ));
-
-        $purger = new ORMPurger($em);
-        $executor = new ORMExecutor($em, $purger);
-        $executor->purge();
-        $executor->execute($loader->getFixtures());
-
-        self::$fixturesLoaded = true;
-        self::ensureKernelShutdown();
+private function loadFixturesOnce(): void
+{
+    if (self::$fixturesLoaded) {
+        return;
     }
+
+    self::bootKernel();
+    $container = static::getContainer();
+
+    /** @var \Doctrine\Persistence\ManagerRegistry $registry */
+    $registry = $container->get('doctrine');
+
+    $em = $registry->getManager();
+    if (!$em instanceof \Doctrine\ORM\EntityManagerInterface) {
+        throw new \RuntimeException('Le manager Doctrine n’est pas un EntityManagerInterface.');
+    }
+
+    /** @var \Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface $hasher */
+    $hasher = $container->get('security.user_password_hasher');
+
+    $loader = new Loader();
+    $loader->addFixture(new UserFixtures($hasher));
+
+    $purger = new ORMPurger($em);
+    $executor = new ORMExecutor($em, $purger);
+    $executor->purge();
+    $executor->execute($loader->getFixtures());
+
+    self::$fixturesLoaded = true;
+    self::ensureKernelShutdown();
+}
+
 
     public function testLoginFormIsDisplayed(): void
     {
@@ -105,26 +114,25 @@ class SecurityControllerTest extends WebTestCase
     }
 
     public function testLogoutRedirectsToHomepage(): void
-{
-    $this->loadFixturesOnce();
+    {
+        $this->loadFixturesOnce();
 
-    $client = static::createClient();
+        $client = static::createClient();
 
-    // D'abord, se connecter
-    $crawler = $client->request('GET', '/login');
-    $form = $crawler->selectButton('Connexion')->form([
-        '_username' => 'Jean Dupont',
-        '_password' => 'password',
-    ]);
-    $client->submit($form);
-    $this->assertResponseRedirects('/');
-    $client->followRedirect();
+        // D'abord, se connecter
+        $crawler = $client->request('GET', '/login');
+        $form = $crawler->selectButton('Connexion')->form([
+            '_username' => 'Jean Dupont',
+            '_password' => 'password',
+        ]);
+        $client->submit($form);
+        $this->assertResponseRedirects('/');
+        $client->followRedirect();
 
-    // Ensuite, accéder manuellement à /logout (simule le lien)
-    $client->request('GET', '/logout');
+        // Ensuite, accéder manuellement à /logout (simule le lien)
+        $client->request('GET', '/logout');
 
-    // Symfony redirige automatiquement après logout
-    $this->assertResponseRedirects('/');
-}
-
+        // Symfony redirige automatiquement après logout
+        $this->assertResponseRedirects('/');
+    }
 }

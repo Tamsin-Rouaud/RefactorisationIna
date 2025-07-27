@@ -58,12 +58,14 @@ class AdminGuestController extends AbstractController
         }
 
         // Protection CSRF
-        if ($this->isCsrfTokenValid('delete-guest-' . $guest->getId(), $request->request->get('_token'))) {
-            $em->remove($guest);
-            $em->flush();
+        $token = (string) $request->request->get('_token');
+if ($this->isCsrfTokenValid('delete-guest-' . $guest->getId(), $token)) {
+    $em->remove($guest);
+    $em->flush();
 
-            $this->addFlash('success', "L'invité a bien été supprimé.");
-        }
+    $this->addFlash('success', "L'invité a bien été supprimé.");
+}
+
 
         return $this->redirectToRoute('admin_guests');
     }

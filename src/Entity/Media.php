@@ -6,7 +6,7 @@ use App\Repository\MediaRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\HttpKernel\Attribute\MapUploadedFile;
+
 
 #[ORM\Entity(repositoryClass: MediaRepository::class)]
 class Media
@@ -27,9 +27,9 @@ class Media
     #[ORM\Column]
     private string $path;
 
-    #[ORM\Column(type: 'string')]
-    #[Assert\NotBlank(message: 'Le titre est obligatoire.')]
-    private ?string $title = null;
+   #[ORM\Column(length: 255, nullable: true)]
+#[Assert\NotBlank(message: 'Le titre ne peut pas être vide.')]
+private ?string $title = null;
 
 
     #[Assert\Image(
@@ -65,14 +65,15 @@ class Media
         $this->path = $path;
     }
 
-    public function getTitle(): string
+    public function getTitle(): ?string
     {
         return $this->title;
     }
 
-    public function setTitle(string $title): void
+    public function setTitle(string $title): self
     {
         $this->title = $title;
+        return $this;
     }
 
     public function getFile(): ?UploadedFile

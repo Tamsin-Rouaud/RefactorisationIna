@@ -17,20 +17,16 @@ class GuestType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
       $builder
-    ->add('name', null, [
-        'constraints' => [
-            new Assert\NotBlank(['message' => 'Le nom est obligatoire.']),
-        ],
-    ])
+    ->add('name')
     ->add('email', EmailType::class, [
         'constraints' => [
             new Assert\NotBlank(['message' => 'L\'email est obligatoire.']),
-            new Assert\Email(['message' => 'Adresse email invalide.']),
+            
         ],
     ])
     ->add('password', PasswordType::class, [
         'constraints' => [
-            new Assert\NotBlank(['message' => 'Le mot de passe est requis.']),
+            
             new Assert\Length(['min' => 6, 'minMessage' => 'Le mot de passe doit contenir au moins {{ limit }} caractères.']),
         ],
     ])

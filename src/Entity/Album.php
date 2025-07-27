@@ -16,9 +16,11 @@ class Album
     #[ORM\Column]
     private ?int $id = null;
 
+
     #[ORM\Column]
     private string $name;
 
+    /** @var Collection<int, Media> */
     #[ORM\OneToMany(mappedBy: "album", targetEntity: Media::class, cascade: ['remove'])]
     private Collection $medias;
 
@@ -27,16 +29,27 @@ class Album
     $this->medias = new ArrayCollection();
 }
 
+/**
+ * @return Collection<int, Media>
+ */
 public function getMedias(): Collection
 {
     return $this->medias;
+}
+
+/**
+ * @param Collection<int, Media> $medias
+ */
+public function setMedias(Collection $medias): void
+{
+    $this->medias = $medias;
 }
 
     #[ORM\ManyToOne(inversedBy: 'albums')]
     private ?User $user = null;
 
 
-
+/** @return int|null */
     public function getId(): ?int
     {
         return $this->id;

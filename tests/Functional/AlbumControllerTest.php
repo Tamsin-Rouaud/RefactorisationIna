@@ -10,34 +10,49 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 class AlbumControllerTest extends CustomWebTestCase
 {
     private KernelBrowser $client;
-    private \Doctrine\ORM\EntityManagerInterface $em;
+    private \Doctrine\Persistence\ObjectManager $em;
     private \App\Repository\AlbumRepository $albumRepository;
     private \App\Repository\UserRepository $userRepository;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->client = static::createClient();
-        $container = static::getContainer();
+protected function setUp(): void
+{
+    parent::setUp();
+    $this->client = static::createClient();
+    $container = static::getContainer();
 
-        $this->loadFixtures([
-            \App\DataFixtures\UserFixtures::class,
-            \App\DataFixtures\AlbumFixtures::class,
-        ], $container);
+    $this->loadFixtures([
+        \App\DataFixtures\UserFixtures::class,
+        \App\DataFixtures\AlbumFixtures::class,
+    ], $container);
 
-        $this->em = $container->get('doctrine')->getManager();
-        $this->albumRepository = $this->em->getRepository(Album::class);
-        $this->userRepository = $this->em->getRepository(User::class);  
-        $this->loginIna($this->client);
-    }
+/** @var \Doctrine\Persistence\ManagerRegistry $registry */
+$registry = $container->get('doctrine');
+$this->em = $registry->getManager();
+
+
+    /** @var \App\Repository\AlbumRepository $albumRepo */
+    $albumRepo = $this->em->getRepository(Album::class);
+    /** @var \App\Repository\UserRepository $userRepo */
+    $userRepo = $this->em->getRepository(User::class);
+
+    $this->albumRepository = $albumRepo;
+    $this->userRepository = $userRepo;
+
+    self::assertInstanceOf(\App\Repository\AlbumRepository::class, $this->albumRepository);
+    self::assertInstanceOf(\App\Repository\UserRepository::class, $this->userRepository);
+
+    $this->loginIna($this->client);
+}
+
 
     private function loginIna(KernelBrowser $client): void
     {
-        $user = self::getContainer()
-            ->get('doctrine')
-            ->getManager()
-            ->getRepository(User::class)    
-            ->findOneBy(['name' => 'Inatest Zaoui']);
+        /** @var \Doctrine\Persistence\ManagerRegistry $registry */
+$registry = self::getContainer()->get('doctrine');
+$user = $registry->getManager()
+    ->getRepository(User::class)
+    ->findOneBy(['name' => 'Inatest Zaoui']);
+
 
         $this->assertNotNull($user, "L'utilisateur admin Ina doit exister en base de données.");
         $client->loginUser($user);
@@ -48,7 +63,9 @@ class AlbumControllerTest extends CustomWebTestCase
         $this->client->request('GET', '/admin/album');
         $this->assertResponseIsSuccessful();
         $this->assertSelectorExists('h1');
-        $this->assertStringContainsString('Albums', $this->client->getResponse()->getContent());
+       $content = (string) $this->client->getResponse()->getContent();
+$this->assertStringContainsString('Albums', $content);
+
     }
 
     public function testAddAlbumFormDisplayed(): void

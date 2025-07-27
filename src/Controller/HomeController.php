@@ -5,17 +5,20 @@ namespace App\Controller;
 use App\Entity\Album;
 use App\Entity\Media;
 use App\Entity\User;
+use App\Repository\AlbumRepository;
+use App\Repository\MediaRepository;
 use App\Repository\UserRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 class HomeController extends AbstractController
 {
     #[Route('/', name: 'home')]
-    public function home()
+    public function home(): Response
     {
         return $this->render('front/home.html.twig');
     }
@@ -23,7 +26,7 @@ class HomeController extends AbstractController
 
 
 #[Route('/guests', name: 'guests')]
-public function guests(UserRepository $userRepository, PaginatorInterface $paginator, Request $request)
+public function guests(UserRepository $userRepository, PaginatorInterface $paginator, Request $request): Response
 {
     $query = $userRepository->getActiveGuestsQuery(); // on va créer cette méthode juste après
 
@@ -40,12 +43,7 @@ public function guests(UserRepository $userRepository, PaginatorInterface $pagin
 
    
     #[Route('/guest/{id}', name: 'guest')]
-public function guest(
-    UserRepository $userRepository,
-    PaginatorInterface $paginator,
-    Request $request,
-    int $id
-) {
+public function guest(UserRepository $userRepository, PaginatorInterface $paginator, Request $request, int $id): Response{
     $guest = $userRepository->findWithMedias($id);
 
     if (!$guest || $guest->isBlocked() && !$this->isGranted('ROLE_ADMIN')) {
@@ -63,42 +61,45 @@ public function guest(
         'pagination' => $pagination
     ]);
 }
-
-    #[Route('/portfolio/{id}', name: 'portfolio')]
+#[Route('/portfolio/{id}', name: 'portfolio')]
 public function portfolio(
-    ManagerRegistry $doctrine,
+    AlbumRepository $albumRepo,
+    UserRepository $userRepo,
+    MediaRepository $mediaRepo,
     PaginatorInterface $paginator,
     Request $request,
     ?int $id = null
-) {
-    $albumRepo = $doctrine->getRepository(Album::class);
-    $userRepo = $doctrine->getRepository(User::class);
-    $mediaRepo = $doctrine->getRepository(Media::class);
-
+): Response {
     $albums = $albumRepo->findAll();
     $album = $id ? $albumRepo->find($id) : null;
-    $user = $userRepo->findOneBy(['admin' => true]);
 
-$query = $album
-    ? $mediaRepo->findByAlbumQuery($album)
-    : $mediaRepo->findByUserQuery($user);
+    if ($album === null) {
+        $user = $userRepo->findOneBy(['admin' => true]);
+        if (!$user) {
+            throw $this->createNotFoundException("Administrateur introuvable pour afficher les médias.");
+        }
 
-$pagination = $paginator->paginate(
-    $query,
-    $request->query->getInt('page', 1),
-    9
-);
+        $query = $mediaRepo->findByUserQuery($user);
+    } else {
+        $query = $mediaRepo->findByAlbumQuery($album);
+    }
 
+    $pagination = $paginator->paginate(
+        $query,
+        $request->query->getInt('page', 1),
+        9
+    );
 
     return $this->render('front/portfolio.html.twig', [
         'albums' => $albums,
         'album' => $album,
-        'pagination' => $pagination
+        'pagination' => $pagination,
     ]);
 }
 
+
     #[Route('/about', name: 'about')]
-    public function about()
+    public function about(): Response
     {
         return $this->render('front/about.html.twig');
     }

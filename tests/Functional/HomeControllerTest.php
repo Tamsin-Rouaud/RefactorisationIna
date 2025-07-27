@@ -17,27 +17,38 @@ class HomeControllerTest extends WebTestCase
 
     
     private function loadFixturesOnce(): void
-    {
-        if (self::$fixturesLoaded) {
-            self::ensureKernelShutdown();
-            return;
-        }
-
-        self::bootKernel();
-        $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
-
-        $loader = new Loader();
-        $loader->addFixture(new UserFixtures($container->get('security.user_password_hasher')));
-
-        $purger = new ORMPurger($em);
-        $executor = new ORMExecutor($em, $purger);
-        $executor->purge();
-        $executor->execute($loader->getFixtures());
-
-        self::$fixturesLoaded = true;
+{
+    if (self::$fixturesLoaded) {
         self::ensureKernelShutdown();
+        return;
     }
+
+    self::bootKernel();
+    $container = static::getContainer();
+
+    /** @var \Doctrine\Persistence\ManagerRegistry $registry */
+    $registry = $container->get('doctrine');
+
+    $em = $registry->getManager();
+
+    if (!$em instanceof \Doctrine\ORM\EntityManagerInterface) {
+        throw new \RuntimeException('Le manager Doctrine n’est pas un EntityManagerInterface.');
+    }
+
+    /** @var \Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface $hasher */
+    $hasher = $container->get('security.user_password_hasher');
+
+    $loader = new Loader();
+    $loader->addFixture(new UserFixtures($hasher));
+
+    $purger = new ORMPurger($em);
+    $executor = new ORMExecutor($em, $purger);
+    $executor->purge();
+    $executor->execute($loader->getFixtures());
+
+    self::$fixturesLoaded = true;
+    self::ensureKernelShutdown();
+}
 
     public function testHomePageIsAccessible(): void
     {
@@ -72,37 +83,48 @@ class HomeControllerTest extends WebTestCase
     $this->assertSelectorTextNotContains('body', 'Marie Durand'); 
 }
 
+public function testGuestPageAccessibleIfNotBlocked(): void
+{
+    $this->loadFixturesOnce();
 
-    public function testGuestPageAccessibleIfNotBlocked(): void
-    {
-        $this->loadFixturesOnce();
+    $client = static::createClient();
 
-        $client = static::createClient();
-        $container = static::getContainer();
-        $userRepo = $container->get('doctrine')->getRepository(User::class);
-        $invite1 = $userRepo->findOneBy(['name' => 'Jean Dupont']);
+    /** @var \Doctrine\Persistence\ManagerRegistry $registry */
+    $registry = static::getContainer()->get('doctrine');
 
-        $client->request('GET', '/guest/' . $invite1->getId());
+    /** @var \App\Repository\UserRepository $userRepo */
+    $userRepo = $registry->getRepository(User::class);
+    $invite1 = $userRepo->findOneBy(['name' => 'Jean Dupont']);
 
-        $this->assertResponseIsSuccessful();
-        $this->assertSelectorTextContains('body', 'Jean Dupont');
-    }
+    $this->assertNotNull($invite1); // Pour éviter l'erreur possible ligne suivante
+    $client->request('GET', '/guest/' . $invite1->getId());
 
-    public function testGuestPageBlockedForNonAdmin(): void
-    {
-        $this->loadFixturesOnce();
+    $this->assertResponseIsSuccessful();
+    $this->assertSelectorTextContains('body', 'Jean Dupont');
+}
 
-        $client = static::createClient();
-        $container = static::getContainer();
-        $userRepo = $container->get('doctrine')->getRepository(User::class);
-        $blocked = $userRepo->findOneBy(['name' => 'Marie Durand']);
 
-        $client->request('GET', '/guest/' . $blocked->getId());
+public function testGuestPageBlockedForNonAdmin(): void
+{
+    $this->loadFixturesOnce();
 
-        $this->assertResponseStatusCodeSame(404);
-    }
+    $client = static::createClient();
 
-    public function testGuestPageAccessibleForAdmin(): void
+    /** @var \Doctrine\Persistence\ManagerRegistry $registry */
+    $registry = static::getContainer()->get('doctrine');
+
+    /** @var \App\Repository\UserRepository $userRepo */
+    $userRepo = $registry->getRepository(User::class);
+    $blocked = $userRepo->findOneBy(['name' => 'Marie Durand']);
+    $this->assertNotNull($blocked, 'Utilisateur bloqué introuvable.');
+
+    $client->request('GET', '/guest/' . $blocked->getId());
+
+    $this->assertResponseStatusCodeSame(404);
+}
+
+
+   public function testGuestPageAccessibleForAdmin(): void
 {
     $this->loadFixturesOnce();
 
@@ -117,10 +139,13 @@ class HomeControllerTest extends WebTestCase
     $client->submit($form);
     $client->followRedirect();
 
-    // Requête vers un invité bloqué
-    $container = static::getContainer();
-    $userRepo = $container->get('doctrine')->getRepository(User::class);
+    /** @var \Doctrine\Persistence\ManagerRegistry $registry */
+    $registry = static::getContainer()->get('doctrine');
+
+    /** @var \App\Repository\UserRepository $userRepo */
+    $userRepo = $registry->getRepository(User::class);
     $blocked = $userRepo->findOneBy(['name' => 'Marie Durand']);
+    $this->assertNotNull($blocked, 'Utilisateur bloqué introuvable.');
 
     $client->request('GET', '/guest/' . $blocked->getId());
 
@@ -139,14 +164,19 @@ public function testPortfolioPageShowsMediasForAdminUser(): void
         $this->assertSelectorExists('body');
     }
 
-    public function testPortfolioWithAlbumIdIsAccessible(): void
+public function testPortfolioWithAlbumIdIsAccessible(): void
 {
     $this->loadFixturesOnce();
 
     $client = static::createClient();
-    $container = $client->getContainer(); // éviter bootKernel
 
-    $album = $container->get('doctrine')->getRepository(Album::class)->findOneBy([]);
+    /** @var \Doctrine\Persistence\ManagerRegistry $registry */
+    $registry = static::getContainer()->get('doctrine');
+
+    /** @var \App\Repository\AlbumRepository $albumRepo */
+    $albumRepo = $registry->getRepository(Album::class);
+    $album = $albumRepo->findOneBy([]);
+
     if (!$album) {
         $this->markTestSkipped('Aucun album disponible pour tester.');
     }
@@ -156,5 +186,6 @@ public function testPortfolioPageShowsMediasForAdminUser(): void
     $this->assertResponseIsSuccessful();
     $this->assertSelectorExists('body');
 }
+
 
 }

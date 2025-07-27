@@ -9,7 +9,7 @@ Merci de votre intérêt pour ce projet ! Afin de garantir une qualité de code 
 Utilisez ce format :
 
 ```
-[type]/nom-de-la-tâche-en-kebab-case
+[type]/nom-de-la-tâche
 ```
 
 Exemples :

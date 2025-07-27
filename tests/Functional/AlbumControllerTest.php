@@ -14,22 +14,33 @@ class AlbumControllerTest extends CustomWebTestCase
     private \App\Repository\AlbumRepository $albumRepository;
     private \App\Repository\UserRepository $userRepository;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->client = static::createClient();
-        $container = static::getContainer();
+protected function setUp(): void
+{
+    parent::setUp();
+    $this->client = static::createClient();
+    $container = static::getContainer();
 
-        $this->loadFixtures([
-            \App\DataFixtures\UserFixtures::class,
-            \App\DataFixtures\AlbumFixtures::class,
-        ], $container);
+    $this->loadFixtures([
+        \App\DataFixtures\UserFixtures::class,
+        \App\DataFixtures\AlbumFixtures::class,
+    ], $container);
 
-        $this->em = $container->get('doctrine')->getManager();
-        $this->albumRepository = $this->em->getRepository(Album::class);
-        $this->userRepository = $this->em->getRepository(User::class);  
-        $this->loginIna($this->client);
-    }
+    $this->em = $container->get('doctrine')->getManager();
+
+    /** @var \App\Repository\AlbumRepository $albumRepo */
+    $albumRepo = $this->em->getRepository(Album::class);
+    /** @var \App\Repository\UserRepository $userRepo */
+    $userRepo = $this->em->getRepository(User::class);
+
+    $this->albumRepository = $albumRepo;
+    $this->userRepository = $userRepo;
+
+    self::assertInstanceOf(\App\Repository\AlbumRepository::class, $this->albumRepository);
+    self::assertInstanceOf(\App\Repository\UserRepository::class, $this->userRepository);
+
+    $this->loginIna($this->client);
+}
+
 
     private function loginIna(KernelBrowser $client): void
     {

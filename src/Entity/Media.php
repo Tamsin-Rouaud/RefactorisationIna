@@ -32,7 +32,6 @@ class Media
     private ?string $title = null;
 
 
-    #[MapUploadedFile]
     #[Assert\Image(
         maxSize: '2M',
         mimeTypes: ['image/jpeg', 'image/png', 'image/gif'],

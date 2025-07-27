@@ -83,91 +83,124 @@ class MediaControllerTest extends CustomWebTestCase
         $this->assertSelectorTextNotContains('body', 'Photo Ina 1');
     }
 
-    public function testInaCanAddMedia(): void
-    {
-        $client = static::createClient();
-        $ina = $this->getIna();
-        $album = $this->getAlbumForUser($ina);
-        $client->loginUser($ina);
+public function testInaCanAddMedia(): void
+{
+    $client = static::createClient();
+    $ina = $this->getIna();
+    $album = $this->getAlbumForUser($ina);
+    $client->loginUser($ina);
 
-        $file = $this->createTempImageFile();
+    $file = $this->createTempImageFile();
+    $filePath = $file->getPathname();
 
-        $crawler = $client->request('GET', '/admin/media/add');
-        $form = $crawler->selectButton('Ajouter')->form([
-            'media[title]' => 'Image valide',
-            'media[album]' => $album->getId(),
-        ]);
-        $form['media[file]']->upload($file);
-        $client->submit($form);
+    $crawler = $client->request('GET', '/admin/media/add');
+    $form = $crawler->selectButton('Ajouter')->form([
+        'media[title]' => 'Image valide',
+        'media[album]' => $album->getId(),
+    ]);
 
-        $this->assertResponseRedirects('/admin/media');
-
-        $media = static::getContainer()->get('doctrine')->getRepository(Media::class)->findOneBy(['title' => 'Image valide']);
-        $this->assertNotNull($media);
-        $uploadPath = static::getContainer()->getParameter('upload_dir') . '/' . basename($media->getPath());
-        $this->assertFileExists($uploadPath);
-
-        $this->deleteFileIfExists($uploadPath);
-        $this->deleteFileIfExists($file->getPathname());
+    $field = $form['media[file]'] ?? null;
+    if (is_array($field)) {
+        $field = reset($field);
+    }
+    if ($field instanceof \Symfony\Component\DomCrawler\Field\FileFormField) {
+        $field->upload($filePath);
     }
 
-    public function testInaCannotAddNonImageFile(): void
-    {
-        $client = static::createClient();
-        $ina = $this->getIna();
-        $album = $this->getAlbumForUser($ina);
-        $client->loginUser($ina);
+    $client->submit($form);
 
-        $path = sys_get_temp_dir() . '/fake.txt';
-        file_put_contents($path, 'not an image');
-        $file = new UploadedFile($path, 'fake.txt', 'text/plain', null, true);
+    $this->assertResponseRedirects('/admin/media');
 
-        $crawler = $client->request('GET', '/admin/media/add');
-        $form = $crawler->selectButton('Ajouter')->form([
-            'media[title]' => 'Fichier non image',
-            'media[album]' => $album->getId(),
-        ]);
-        $form['media[file]']->upload($file);
-        $client->submit($form);
+    $media = static::getContainer()->get('doctrine')->getRepository(Media::class)->findOneBy(['title' => 'Image valide']);
+    $this->assertNotNull($media);
+    $uploadPath = static::getContainer()->getParameter('upload_dir') . '/' . basename($media->getPath());
+    $this->assertFileExists($uploadPath);
 
-        $this->assertResponseStatusCodeSame(200);
-        $this->assertSelectorTextContains('body', 'Seules les images JPEG, PNG ou GIF sont autorisées.');
+    $this->deleteFileIfExists($uploadPath);
+    $this->deleteFileIfExists($file->getPathname());
+}
 
-        $this->deleteFileIfExists($path);
+
+public function testInaCannotAddNonImageFile(): void
+{
+    $client = static::createClient();
+    $ina = $this->getIna();
+    $album = $this->getAlbumForUser($ina);
+    $client->loginUser($ina);
+
+    $path = sys_get_temp_dir() . '/fake.txt';
+    file_put_contents($path, 'not an image');
+    $file = new UploadedFile($path, 'fake.txt', 'text/plain', null, true);
+    $filePath = $file->getPathname();
+
+    $crawler = $client->request('GET', '/admin/media/add');
+    $form = $crawler->selectButton('Ajouter')->form([
+        'media[title]' => 'Fichier non image',
+        'media[album]' => $album->getId(),
+    ]);
+
+    $field = $form['media[file]'] ?? null;
+    if (is_array($field)) {
+        $field = reset($field);
+    }
+    if ($field instanceof \Symfony\Component\DomCrawler\Field\FileFormField) {
+        $field->upload($filePath);
     }
 
-   public function testInaCannotAddTooLargeImage(): void
-    {
-        $client = static::createClient();
-        $container = static::getContainer();
+    $client->submit($form);
 
-        $this->loadFixtures([
-            \App\DataFixtures\UserFixtures::class,
-            \App\DataFixtures\AlbumFixtures::class,
-            \App\DataFixtures\MediaFixtures::class,
-        ], $container);
+    $this->assertResponseStatusCodeSame(200);
+    $this->assertSelectorTextContains('body', 'Seules les images JPEG, PNG ou GIF sont autorisées.');
 
-        $ina = $container->get('doctrine')->getRepository(User::class)->findOneBy(['name' => 'Inatest Zaoui']);
-        $album = $container->get('doctrine')->getRepository(\App\Entity\Album::class)->findOneBy(['user' => $ina]);
+    $this->deleteFileIfExists($path);
+}
 
-        $client->loginUser($ina);
 
-        $targetPath = sys_get_temp_dir() . '/uploaded_big_image.jpg';
-        file_put_contents($targetPath, str_repeat('a', 3 * 1024 * 1024)); // 3 Mo
+public function testInaCannotAddTooLargeImage(): void
+{
+    $client = static::createClient();
+    $container = static::getContainer();
 
-        $uploadedFile = new UploadedFile($targetPath, 'uploaded_big_image.jpg', 'image/jpeg', null, true);
+    $this->loadFixtures([
+        \App\DataFixtures\UserFixtures::class,
+        \App\DataFixtures\AlbumFixtures::class,
+        \App\DataFixtures\MediaFixtures::class,
+    ], $container);
 
-        $crawler = $client->request('GET', '/admin/media/add');
-        $form = $crawler->selectButton('Ajouter')->form();
-        $form['media[title]'] = 'Image trop lourde';
-        $form['media[file]']->upload($uploadedFile);
-        $form['media[album]'] = $album->getId();
-        $client->submit($form);
+    $ina = $container->get('doctrine')->getRepository(User::class)->findOneBy(['name' => 'Inatest Zaoui']);
+    $album = $container->get('doctrine')->getRepository(Album::class)->findOneBy(['user' => $ina]);
 
-        $this->assertResponseStatusCodeSame(200);
-        $this->assertSelectorTextContains('body', 'Le fichier ne doit pas dépasser 2 Mo.');
-        if (file_exists($targetPath)) unlink($targetPath);
+    $client->loginUser($ina);
+
+    $targetPath = sys_get_temp_dir() . '/uploaded_big_image.jpg';
+    file_put_contents($targetPath, str_repeat('a', 3 * 1024 * 1024)); // 3 Mo
+
+    $uploadedFile = new UploadedFile($targetPath, 'uploaded_big_image.jpg', 'image/jpeg', null, true);
+    $filePath = $uploadedFile->getPathname();
+
+    $crawler = $client->request('GET', '/admin/media/add');
+    $form = $crawler->selectButton('Ajouter')->form();
+    $form['media[title]'] = 'Image trop lourde';
+    $form['media[album]'] = $album->getId();
+
+    $field = $form['media[file]'] ?? null;
+    if (is_array($field)) {
+        $field = reset($field);
     }
+    if ($field instanceof \Symfony\Component\DomCrawler\Field\FileFormField) {
+        $field->upload($filePath);
+    }
+
+    $client->submit($form);
+
+    $this->assertResponseStatusCodeSame(200);
+    $this->assertSelectorTextContains('body', 'Le fichier ne doit pas dépasser 2 Mo.');
+
+    if (file_exists($targetPath)) {
+        unlink($targetPath);
+    }
+}
+
     public function testInaCannotAddMediaWithoutTitle(): void
     {
         $client = static::createClient();

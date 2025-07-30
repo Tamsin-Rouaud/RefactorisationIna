@@ -1,0 +1,66 @@
+name: CI Symfony
+
+on:
+  push:
+    branches: [ main, ci/github-actions]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_database
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    env:
+      DATABASE_URL: "mysql://root:root@127.0.0.1:3306/test_database"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          extensions: pdo_mysql
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Create database
+        run: php bin/console doctrine:database:create --env=test
+
+      - name: Run migrations
+        run: php bin/console doctrine:migrations:migrate --no-interaction --env=test
+
+      - name: Load fixtures
+        run: php bin/console doctrine:fixtures:load --no-interaction --env=test
+
+    #   # (Optionnel) Compile SASS si ton projet le nécessite
+    #   - name: Compile SASS
+    #     run: php bin/console sass:build
+    #     continue-on-error: true
+
+      - name: Run tests
+        run: php bin/phpunit
+
+      # ➕ Diagnostic en cas d'erreur de test
+      - name: Check Symfony logs (dev.log)
+        run: cat var/log/dev.log || echo "No dev.log found"
+
+      - name: Run PHPStan (analyse statique)
+        run: vendor/bin/phpstan analyse --memory-limit=1G

@@ -38,8 +38,10 @@ jobs:
           extensions: pdo_mysql
           coverage: none
 
-      - name: Install Composer dependencies (no-scripts)
-        run: composer install --prefer-dist --no-progress --no-scripts
+    
+      - name: Install Composer dependencies
+      
+        run: composer install --prefer-dist --no-progress 
 
       - name: Create database
         run: php bin/console doctrine:database:create --env=test

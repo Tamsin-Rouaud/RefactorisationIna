@@ -20,7 +20,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-   private int $id;
+    private int $id;
 
 
     #[ORM\Column]
@@ -61,9 +61,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->albums = new ArrayCollection();
     }
 
-    public function getId(): ?int { return $this->id; }
+    public function getId(): ?int 
+    { 
+        return $this->id; 
+    }
 
-    public function getEmail(): ?string { return $this->email; }
+    public function getEmail(): ?string 
+    {
+        return $this->email; 
+    }
 
     public function setEmail(string $email): static
     {
@@ -71,48 +77,64 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getName(): ?string { return $this->name; }
+    public function getName(): ?string 
+    {
+        return $this->name; 
+    }
 
-    public function setName(?string $name): void { $this->name = $name; }
+    public function setName(?string $name): void 
+    {
+        $this->name = $name; 
+    }
 
-    public function getDescription(): ?string { return $this->description; }
+    public function getDescription(): ?string 
+    { 
+        return $this->description; 
+    }
 
-    public function setDescription(?string $description): void { $this->description = $description; }
+    public function setDescription(?string $description): void 
+    { 
+        $this->description = $description; 
+    }
 
-/**
- * @return Collection<int, Media>
- */
-public function getMedias(): Collection
-{
-    return $this->medias;
-}
+    /**
+    * @return Collection<int, Media>
+    */
+    public function getMedias(): Collection
+    {
+        return $this->medias;
+    }
 
-/**
- * @param Collection<int, Media> $medias
- */
-public function setMedias(Collection $medias): void
-{
-    $this->medias = $medias;
-}
+    /**
+    * @param Collection<int, Media> $medias
+    */
+    public function setMedias(Collection $medias): void
+    {
+        $this->medias = $medias;
+    }
 
 
-    public function isAdmin(): bool { return $this->admin; }
+    public function isAdmin(): bool 
+    {
+        return $this->admin; 
+    }
 
-    public function setAdmin(bool $admin): void { $this->admin = $admin; }
+    public function setAdmin(bool $admin): void 
+    {
+        $this->admin = $admin; 
+    }
 
     // === Méthodes exigées par Symfony Security ===
 
-public function getUserIdentifier(): string
-{
-    return !empty($this->name) ? $this->name : 'utilisateur';
-}
-
-
+    public function getUserIdentifier(): string
+    {
+        return !empty($this->name) ? $this->name : 'utilisateur';
+    }
 
     public function getPassword(): string
-{
-    return $this->password ?? '';
-}
+    {
+        return $this->password ?? '';
+    }
 
     public function setPassword(?string $password): self
     {
@@ -137,8 +159,6 @@ public function getUserIdentifier(): string
     {
         return null;
     }
-
-
 
     public function isBlocked(): bool
     {

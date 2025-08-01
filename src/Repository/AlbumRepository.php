@@ -24,5 +24,13 @@ class AlbumRepository extends ServiceEntityRepository
         parent::__construct($registry, Album::class);
     }
 
-//   
+    public function findAllVisible(): array
+    {
+        return $this->createQueryBuilder('a')
+            ->join('a.user', 'u')
+            ->where('u.isBlocked = false')
+            ->getQuery()
+            ->getResult();
+    }
+
 }

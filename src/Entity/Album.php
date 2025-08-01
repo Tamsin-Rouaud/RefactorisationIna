@@ -16,7 +16,6 @@ class Album
     #[ORM\Column]
     private ?int $id = null;
 
-
     #[ORM\Column]
     private string $name;
 
@@ -24,32 +23,32 @@ class Album
     #[ORM\OneToMany(mappedBy: "album", targetEntity: Media::class, cascade: ['remove'])]
     private Collection $medias;
 
-    public function __construct()
-{
-    $this->medias = new ArrayCollection();
-}
-
-/**
- * @return Collection<int, Media>
- */
-public function getMedias(): Collection
-{
-    return $this->medias;
-}
-
-/**
- * @param Collection<int, Media> $medias
- */
-public function setMedias(Collection $medias): void
-{
-    $this->medias = $medias;
-}
-
+    #[ORM\JoinColumn(nullable: false)]
     #[ORM\ManyToOne(inversedBy: 'albums')]
     private ?User $user = null;
 
+    public function __construct()
+    {
+        $this->medias = new ArrayCollection();
+    }
 
-/** @return int|null */
+    /**
+    * @return Collection<int, Media>
+    */
+    public function getMedias(): Collection
+    {
+        return $this->medias;
+    }
+
+    /**
+    * @param Collection<int, Media> $medias
+    */
+    public function setMedias(Collection $medias): void
+    {
+        $this->medias = $medias;
+    }
+
+    /** @return int|null */
     public function getId(): ?int
     {
         return $this->id;
@@ -78,25 +77,25 @@ public function setMedias(Collection $medias): void
     }
 
     public function addMedia(Media $media): static
-{
-    if (!$this->medias->contains($media)) {
-        $this->medias->add($media);
-        $media->setAlbum($this);
-    }
-
-    return $this;
-}
-
-public function removeMedia(Media $media): static
-{
-    if ($this->medias->removeElement($media)) {
-        // set the owning side to null (unless already changed)
-        if ($media->getAlbum() === $this) {
-            $media->setAlbum(null);
+    {
+        if (!$this->medias->contains($media)) {
+            $this->medias->add($media);
+            $media->setAlbum($this);
         }
+
+        return $this;
     }
 
-    return $this;
-}
+    public function removeMedia(Media $media): static
+    {
+        if ($this->medias->removeElement($media)) {
+            // set the owning side to null (unless already changed)
+            if ($media->getAlbum() === $this) {
+                $media->setAlbum(null);
+            }
+        }
+
+        return $this;
+    }
 
 }

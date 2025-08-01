@@ -38,7 +38,7 @@ jobs:
           extensions: pdo_mysql
           coverage: none
 
-    
+
       - name: Install Composer dependencies
       
         run: composer install --prefer-dist --no-progress 
@@ -64,4 +64,5 @@ jobs:
           test -f vendor/bin/phpstan && echo "✅ PHPStan installé." || exit 1
 
       - name: Run PHPStan (analyse statique)
-        run: vendor/bin/phpstan analyse --memory-limit=1G
+        run: composer phpstan analyse --memory-limit=1G
+

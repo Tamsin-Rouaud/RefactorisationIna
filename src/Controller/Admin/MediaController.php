@@ -4,6 +4,8 @@ namespace App\Controller\Admin;
 
 use App\Entity\Media;
 use App\Form\MediaType;
+use App\Entity\Album;
+use App\Entity\User;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,22 +21,40 @@ class MediaController extends AbstractController
     public function index(Request $request, ManagerRegistry $doctrine): Response
     {
         $page = $request->query->getInt('page', 1);
-        $criteria = [];
 
-        if (!$this->isGranted('ROLE_ADMIN')) {
-            $criteria['user'] = $this->getUser();
-        }
-
+        /** @var \App\Repository\MediaRepository $mediaRepo */
         $mediaRepo = $doctrine->getRepository(Media::class);
 
-        $medias = $mediaRepo->findBy(
-            $criteria,
-            ['id' => 'ASC'],
-            25,
-            25 * ($page - 1)
-        );
 
-        $total = count($mediaRepo->findBy($criteria));
+        // Filtrer les médias dont l’utilisateur est bloqué
+        $qb = $mediaRepo->createQueryBuilder('m')
+            ->join('m.user', 'u')
+            ->where('u.isBlocked = false')
+            ->orderBy('m.id', 'ASC')
+            ->setMaxResults(25)
+            ->setFirstResult(25 * ($page - 1));
+
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            $qb->andWhere('m.user = :user')
+               ->setParameter('user', $this->getUser());
+        }
+
+        $medias = $qb->getQuery()->getResult();
+
+        // Compter aussi les visibles pour pagination
+        /** @var \App\Repository\MediaRepository $mediaRepo */
+        $count = $mediaRepo->createQueryBuilder('m')
+
+            ->select('COUNT(m.id)')
+            ->join('m.user', 'u')
+            ->where('u.isBlocked = false');
+
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            $count->andWhere('m.user = :user')
+                  ->setParameter('user', $this->getUser());
+        }
+
+        $total = $count->getQuery()->getSingleScalarResult();
 
         return $this->render('admin/media/index.html.twig', [
             'medias' => $medias,
@@ -47,25 +67,39 @@ class MediaController extends AbstractController
     public function add(Request $request, ManagerRegistry $doctrine): Response
     {
         $media = new Media();
+
         $form = $this->createForm(MediaType::class, $media, [
-            'is_admin' => $this->isGranted('ROLE_ADMIN')
+            'is_admin' => $this->isGranted('ROLE_ADMIN'),
+            'user' => $this->getUser(),
+            'album_repository' => $doctrine->getRepository(Album::class),
+            'user_repository' => $doctrine->getRepository(User::class),
         ]);
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $file = $media->getFile();
             if ($file) {
                 $filename = md5(uniqid()) . '.' . $file->guessExtension();
-
                 $uploadDir = $this->params->get('upload_dir');
-                if (!is_string($uploadDir)) {
-                    throw new \RuntimeException('Le paramètre "upload_dir" doit être une chaîne.');
-                }
-
-                $media->setPath('uploads/' . $filename);
                 $file->move($uploadDir, $filename);
+                $media->setPath('uploads/' . $filename);
             } else {
                 $media->setPath('uploads/default.jpg');
+            }
+
+            if ($this->isGranted('ROLE_ADMIN')) {
+                if (!$media->getUser()) {
+                    throw new \RuntimeException('Veuillez sélectionner un utilisateur.');
+                }
+
+                // Bloquer si l’admin choisit un utilisateur bloqué
+                if ($media->getUser()->isBlocked()) {
+                    throw new \RuntimeException('Impossible d’ajouter un média pour un utilisateur bloqué.');
+                }
+
+            } else {
+                $media->setUser($this->getUser());
             }
 
             $em = $doctrine->getManager();
@@ -76,7 +110,7 @@ class MediaController extends AbstractController
         }
 
         return $this->render('admin/media/add.html.twig', [
-            'form' => $form->createView()
+            'form' => $form->createView(),
         ]);
     }
 
@@ -97,13 +131,9 @@ class MediaController extends AbstractController
         $em->flush();
 
         $path = $media->getPath();
-
         $uploadDir = $this->params->get('upload_dir');
-        if (!is_string($uploadDir)) {
-            throw new \RuntimeException('Le paramètre "upload_dir" doit être une chaîne.');
-        }
-
         $fullPath = $uploadDir . '/' . basename($path);
+
         if (file_exists($fullPath) && is_file($fullPath)) {
             unlink($fullPath);
         }

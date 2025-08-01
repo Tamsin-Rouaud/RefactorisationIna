@@ -7,7 +7,6 @@ use App\Entity\Media;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Query;
-use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -19,6 +18,7 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method Media[]    findBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null, $limit = null, $offset = null)
  * @method Media|null findOneBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null)
  */
+
 class MediaRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -54,4 +54,13 @@ class MediaRepository extends ServiceEntityRepository
             ->orderBy('m.id', 'ASC')
             ->getQuery();
     }
+    public function findAllVisible(): array
+    {
+        return $this->createQueryBuilder('m')
+            ->join('m.user', 'u')
+            ->where('u.isBlocked = false')
+            ->getQuery()
+            ->getResult();
+    }
+
 }

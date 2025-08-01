@@ -4,10 +4,8 @@ namespace App\Repository;
 
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\DBAL\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
-use Knp\Component\Pager\Event\Subscriber\Paginate\Doctrine\ODM\MongoDB\QueryBuilderSubscriber;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
@@ -46,30 +44,26 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
 
 
 
-public function getActiveGuestsQuery(): QueryBuilder
-{
-    return $this->createQueryBuilder('u')
-        ->leftJoin('u.medias', 'm')
-        ->addSelect('m')
-        ->leftJoin('u.albums', 'a')
-        ->addSelect('a')
-        ->where('u.admin = false')
-        ->andWhere('u.isBlocked = false');
-}
+    public function getActiveGuestsQuery(): QueryBuilder
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.admin = false')
+            ->andWhere('u.isBlocked = false');
+    }
 
 
-public function findWithMedias(int $id): ?User
-{
-    $result = $this->createQueryBuilder('u')
-        ->leftJoin('u.medias', 'm')
-        ->addSelect('m')
-        ->where('u.id = :id')
-        ->setParameter('id', $id)
-        ->getQuery()
-        ->getOneOrNullResult();
+    public function findWithMedias(int $id): ?User
+    {
+        $result = $this->createQueryBuilder('u')
+            ->leftJoin('u.medias', 'm')
+            ->addSelect('m')
+            ->where('u.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
 
-    return $result instanceof User ? $result : null;
-}
+        return $result instanceof User ? $result : null;
+    }
 
 
 }

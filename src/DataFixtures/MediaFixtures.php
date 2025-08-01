@@ -13,42 +13,45 @@ class MediaFixtures extends Fixture implements DependentFixtureInterface
 {
     public function load(ObjectManager $manager): void
     {
-        // Médias pour Album Ina 1
-        for ($i = 1; $i <= 2; $i++) {
+        $ina = $this->getReference('user_ina', User::class);
+        $invite1 = $this->getReference('user_invite1', User::class);
+        $invite2 = $this->getReference('user_invite2', User::class);
+
+        // On récupère les 5 albums d’Ina
+        $albums = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $albums[] = $this->getReference("album_ina_$i", Album::class);
+        }
+
+        // 10 médias d’Ina, dispatchés dans ses albums
+        for ($i = 1; $i <= 10; $i++) {
             $media = new Media();
             $media->setTitle("Photo Ina $i");
-            $media->setPath("uploads/media/000$i.jpg");
-            $media->setAlbum($this->getReference('album_ina_1', Album::class));
-            $media->setUser($this->getReference('user_ina', User::class));
+            $media->setPath("uploads/media/ina_$i.jpg");
+            $media->setUser($ina);
+            // Dispatch circulaire dans les 5 albums
+            $media->setAlbum($albums[($i - 1) % 5]);
             $manager->persist($media);
         }
 
-        // Média pour Album Ina 2
-        $media = new Media();
-        $media->setTitle("Photo Ina 3");
-        $media->setPath("uploads/media/0003.jpg");
-        $media->setAlbum($this->getReference('album_ina_2', Album::class));
-        $media->setUser($this->getReference('user_ina', User::class));
-        $manager->persist($media);
-
-        // Média pour Invité actif
+        // Médias d’invités sans album
         $media = new Media();
         $media->setTitle("Photo Invité Actif");
-        $media->setPath("uploads/media/0004.jpg");
-        $media->setAlbum($this->getReference('album_invite1', Album::class));
-        $media->setUser($this->getReference('user_invite1', User::class));
+        $media->setPath("uploads/media/invite1.jpg");
+        $media->setUser($invite1);
+        $media->setAlbum(null);
         $manager->persist($media);
 
-        // Média pour Invité bloqué
         $media = new Media();
         $media->setTitle("Photo Invité Bloqué");
         $media->setPath("uploads/media/invite2.jpg");
-        $media->setAlbum($this->getReference('album_invite2', Album::class));
-        $media->setUser($this->getReference('user_invite2', User::class));
+        $media->setUser($invite2);
+        $media->setAlbum(null);
         $manager->persist($media);
 
         $manager->flush();
     }
+
 
     public function getDependencies(): array
     {

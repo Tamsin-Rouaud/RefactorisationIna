@@ -5,9 +5,12 @@
         <h1>Albums</h1>
         <a href="{{ path('admin_album_index') }}" class="btn btn-primary">Retour</a>
     </div>
+
     {{ form_start(form) }}
         {{ form_row(form.name) }}
+        {% if form.user is defined %}
+            {{ form_row(form.user) }}
+        {% endif %}
         <button type="submit" class="btn btn-primary">Ajouter</button>
     {{ form_end(form) }}
 {% endblock %}
-

@@ -1,0 +1,24 @@
+{% extends 'front.html.twig' %}
+
+{% block front %}
+    <div class="row">
+        <div class="col-12">
+            <h3 class="mb-4">Ajouter un média</h3>
+
+            {{ form_start(form) }}
+
+            {{ form_row(form.title) }}
+            {{ form_row(form.file) }}
+            {{ form_row(form.album) }}
+
+            {% if form.user is defined %}
+                {{ form_row(form.user) }}
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary">Ajouter</button>
+
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}
+

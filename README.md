@@ -1,3 +1,5 @@
+![CI Symfony](https://github.com/ton-compte/ton-repo/actions/workflows/ci.yml/badge.svg)
+
 # 📸 Projet Ina Zaoui - Refactorisation Symfony
 
 Ce projet vise à refactoriser le site web de la photographe Ina Zaoui. L’objectif est de moderniser le code, corriger les anomalies existantes, implémenter de nouvelles fonctionnalités, renforcer la qualité logicielle, optimiser les performances et mettre en place une intégration continue.

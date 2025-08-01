@@ -11,7 +11,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 class AdminGuestControllerTest extends CustomWebTestCase
 {
     private KernelBrowser $client;
-   private \Doctrine\Persistence\ObjectManager $em;
+    private \Doctrine\Persistence\ObjectManager $em;
     private UserRepository $userRepository;
 
     protected function setUp(): void
@@ -23,15 +23,13 @@ class AdminGuestControllerTest extends CustomWebTestCase
             UserFixtures::class,
         ], $container);
 
-/** @var \Doctrine\Persistence\ManagerRegistry $registry */
-$registry = $container->get('doctrine');
-$this->em = $registry->getManager();
-
-
+        /** @var \Doctrine\Persistence\ManagerRegistry $registry */
+        $registry = $container->get('doctrine');
+        $this->em = $registry->getManager();
 
         /** @var UserRepository $repo */
-$repo = self::getContainer()->get(UserRepository::class);
-$this->userRepository = $repo;
+        $repo = self::getContainer()->get(UserRepository::class);
+        $this->userRepository = $repo;
 
     }
 
@@ -51,7 +49,7 @@ $this->userRepository = $repo;
         $this->assertResponseIsSuccessful();
         $this->assertSelectorExists('h1');
         $content = (string) $this->client->getResponse()->getContent();
-$this->assertStringContainsString('Gestion des invités', $content);
+        $this->assertStringContainsString('Gestion des invités', $content);
 
     }
 
@@ -75,7 +73,7 @@ $this->assertStringContainsString('Gestion des invités', $content);
 
         $updated = $this->userRepository->find($guest->getId());
         $this->assertInstanceOf(User::class, $updated);
-$this->assertTrue($updated->isBlocked());
+        $this->assertTrue($updated->isBlocked());
 
         $this->assertResponseRedirects('/admin/guests');
     }
@@ -93,7 +91,7 @@ $this->assertTrue($updated->isBlocked());
 
         $updated = $this->userRepository->find($guest->getId());
         $this->assertInstanceOf(User::class, $updated);
-$this->assertFalse($updated->isBlocked());
+        $this->assertFalse($updated->isBlocked());
 
         $this->assertResponseRedirects('/admin/guests');
     }
@@ -165,7 +163,7 @@ $this->assertFalse($updated->isBlocked());
         $this->assertResponseStatusCodeSame(404);
     }
 
-public function testAdminCannotAddGuestWithInvalidData(): void
+    public function testAdminCannotAddGuestWithInvalidData(): void
     {
         $this->loginAsName('Inatest Zaoui');
         $crawler = $this->client->request('GET', '/admin/guests/new');
@@ -178,8 +176,8 @@ public function testAdminCannotAddGuestWithInvalidData(): void
         $this->client->submit($form);
 
         $this->assertSelectorTextContains('body', 'Le mot de passe est obligatoire.');
-$this->assertSelectorTextContains('body', 'Le nom est obligatoire.');
-$this->assertSelectorTextContains('body', 'L’email est invalide.');
+        $this->assertSelectorTextContains('body', 'Le nom est obligatoire.');
+        $this->assertSelectorTextContains('body', 'L’email est invalide.');
 
     }
 

@@ -113,7 +113,7 @@ class SecurityControllerTest extends WebTestCase
         $this->assertSelectorExists('.alert-danger');
     }
 
-    public function testLogoutRedirectsToHomepage(): void
+    public function testLogoutRedirectsToLogIn(): void
     {
         $this->loadFixturesOnce();
 
@@ -133,6 +133,6 @@ class SecurityControllerTest extends WebTestCase
         $client->request('GET', '/logout');
 
         // Symfony redirige automatiquement après logout
-        $this->assertResponseRedirects('/');
+        $this->assertResponseRedirects('/login');
     }
 }

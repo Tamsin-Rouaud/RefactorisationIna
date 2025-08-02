@@ -23,7 +23,7 @@ security:
                 password_parameter: _password
             logout:
                 path: /logout
-                target: /
+                target: /login
             user_checker: App\Security\UserChecker
 
     role_hierarchy:

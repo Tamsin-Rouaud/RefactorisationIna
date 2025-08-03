@@ -13,37 +13,37 @@ class SecurityControllerTest extends WebTestCase
 {
     private static bool $fixturesLoaded = false;
 
-private function loadFixturesOnce(): void
-{
-    if (self::$fixturesLoaded) {
-        return;
+    private function loadFixturesOnce(): void
+    {
+        if (self::$fixturesLoaded) {
+            return;
+        }
+
+        self::bootKernel();
+        $container = static::getContainer();
+
+        /** @var \Doctrine\Persistence\ManagerRegistry $registry */
+        $registry = $container->get('doctrine');
+
+        $em = $registry->getManager();
+        if (!$em instanceof \Doctrine\ORM\EntityManagerInterface) {
+            throw new \RuntimeException('Le manager Doctrine n’est pas un EntityManagerInterface.');
+        }
+
+        /** @var \Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface $hasher */
+        $hasher = $container->get('security.user_password_hasher');
+
+        $loader = new Loader();
+        $loader->addFixture(new UserFixtures($hasher));
+
+        $purger = new ORMPurger($em);
+        $executor = new ORMExecutor($em, $purger);
+        $executor->purge();
+        $executor->execute($loader->getFixtures());
+
+        self::$fixturesLoaded = true;
+        self::ensureKernelShutdown();
     }
-
-    self::bootKernel();
-    $container = static::getContainer();
-
-    /** @var \Doctrine\Persistence\ManagerRegistry $registry */
-    $registry = $container->get('doctrine');
-
-    $em = $registry->getManager();
-    if (!$em instanceof \Doctrine\ORM\EntityManagerInterface) {
-        throw new \RuntimeException('Le manager Doctrine n’est pas un EntityManagerInterface.');
-    }
-
-    /** @var \Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface $hasher */
-    $hasher = $container->get('security.user_password_hasher');
-
-    $loader = new Loader();
-    $loader->addFixture(new UserFixtures($hasher));
-
-    $purger = new ORMPurger($em);
-    $executor = new ORMExecutor($em, $purger);
-    $executor->purge();
-    $executor->execute($loader->getFixtures());
-
-    self::$fixturesLoaded = true;
-    self::ensureKernelShutdown();
-}
 
 
     public function testLoginFormIsDisplayed(): void
@@ -113,7 +113,7 @@ private function loadFixturesOnce(): void
         $this->assertSelectorExists('.alert-danger');
     }
 
-    public function testLogoutRedirectsToHomepage(): void
+    public function testLogoutRedirectsToLogIn(): void
     {
         $this->loadFixturesOnce();
 
@@ -133,6 +133,6 @@ private function loadFixturesOnce(): void
         $client->request('GET', '/logout');
 
         // Symfony redirige automatiquement après logout
-        $this->assertResponseRedirects('/');
+        $this->assertResponseRedirects('/login');
     }
 }

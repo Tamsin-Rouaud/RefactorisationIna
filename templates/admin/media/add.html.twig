@@ -5,15 +5,41 @@
         <h1>Medias</h1>
         <a href="{{ path('admin_media_index') }}" class="btn btn-primary">Retour</a>
     </div>
+
     {{ form_start(form) }}
+
         {{ form_row(form.user) }}
-        {% if is_granted('ROLE_ADMIN') %}
-            {{ form_row(form.album) }}
-            {{ form_row(form.title) }}
-        {% endif %}
+        {{ form_row(form.album) }}
+        {{ form_row(form.title) }}
         {{ form_row(form.file) }}
         {{ form_errors(form.file) }}
 
         <button type="submit" class="btn btn-primary">Ajouter</button>
     {{ form_end(form) }}
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const userSelect = document.querySelector('#media_user');
+        const albumSelect = document.querySelector('#media_album');
+
+        if (userSelect && albumSelect) {
+            userSelect.addEventListener('change', function () {
+                const userId = this.value;
+
+                fetch('/admin/albums/by-user/' + userId)
+                    .then(response => response.json())
+                    .then(data => {
+                        albumSelect.innerHTML = '';
+                        data.forEach(album => {
+                            const option = document.createElement('option');
+                            option.value = album.id;
+                            option.textContent = album.name;
+                            albumSelect.appendChild(option);
+                        });
+                    });
+            });
+        }
+    });
+    </script>
+
 {% endblock %}

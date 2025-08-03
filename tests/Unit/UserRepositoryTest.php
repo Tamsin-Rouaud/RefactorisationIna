@@ -36,8 +36,8 @@ class UserRepositoryTest extends KernelTestCase
     public function testUpgradePasswordWithValidUser(): void
     {
         $user = new User();
-        $user->setName('TestUser');
-        $user->setEmail('test@example.com');
+        $user->setName('TestUser_' . uniqid());
+        $user->setEmail('test_' . uniqid() . '@example.com');
         $user->setPassword('old_password');
 
         $this->em->persist($user);
@@ -54,17 +54,18 @@ class UserRepositoryTest extends KernelTestCase
         $this->assertSame($newHashedPassword, $updatedUser->getPassword());
     }
 
-   public function testUpgradePasswordThrowsExceptionWithInvalidUser(): void
-{
-    $stub = new class implements PasswordAuthenticatedUserInterface {
-        public function getPassword(): string
-        {
-            return 'irrelevant';
-        }
-    };
 
-    $this->expectException(UnsupportedUserException::class);
-    $this->repository->upgradePassword($stub, 'irrelevant');
-}
+   public function testUpgradePasswordThrowsExceptionWithInvalidUser(): void
+    {
+        $stub = new class implements PasswordAuthenticatedUserInterface {
+            public function getPassword(): string
+            {
+                return 'irrelevant';
+            }
+        };
+
+        $this->expectException(UnsupportedUserException::class);
+        $this->repository->upgradePassword($stub, 'irrelevant');
+    }
 
 }

@@ -16,28 +16,26 @@ class Media
     #[ORM\Column]
     private int $id;
 
-
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "medias", fetch: "EAGER")]
     private ?User $user = null;
 
-    #[Assert\NotNull(message: 'L’album est obligatoire.')]
-    #[ORM\ManyToOne(targetEntity: Album::class, fetch: "EAGER")]
+    #[ORM\ManyToOne(targetEntity: Album::class, inversedBy: 'medias', fetch: "EAGER")]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Album $album = null;
 
     #[ORM\Column]
     private string $path;
 
    #[ORM\Column(length: 255, nullable: true)]
-#[Assert\NotBlank(message: 'Le titre ne peut pas être vide.')]
-private ?string $title = null;
-
+    #[Assert\NotBlank(message: 'Le titre ne peut pas être vide.')]
+    private ?string $title = null;
 
     #[Assert\Image(
         maxSize: '2M',
         mimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
         mimeTypesMessage: 'Seules les images JPEG, PNG ou GIF sont autorisées.',
-        maxSizeMessage: 'Le fichier ne doit pas dépasser 2 Mo.'
-    )]
+        maxSizeMessage: 'Le fichier ne doit pas dépasser 2 Mo.')
+    ]
     private ?UploadedFile $file = null;
 
     public function getId(): ?int

@@ -24,78 +24,80 @@ class HomeController extends AbstractController
     }
 
 
+    #[Route('/guests', name: 'guests')]
+    public function guests(UserRepository $userRepository, PaginatorInterface $paginator, Request $request): Response
+    {
+        $query = $userRepository->getActiveGuestsQuery(); 
 
-#[Route('/guests', name: 'guests')]
-public function guests(UserRepository $userRepository, PaginatorInterface $paginator, Request $request): Response
-{
-    $query = $userRepository->getActiveGuestsQuery(); // on va créer cette méthode juste après
+        $pagination = $paginator->paginate(
+            $query,
+            $request->query->getInt('page', 1), // page actuelle
+            12 // nombre d'invités par page
+        );
 
-    $pagination = $paginator->paginate(
-        $query,
-        $request->query->getInt('page', 1), // page actuelle
-        12 // nombre d'invités par page
-    );
-
-    return $this->render('front/guests.html.twig', [
-        'pagination' => $pagination
-    ]);
-}
+        return $this->render('front/guests.html.twig', [
+            'pagination' => $pagination
+        ]);
+    }
 
    
     #[Route('/guest/{id}', name: 'guest')]
-public function guest(UserRepository $userRepository, PaginatorInterface $paginator, Request $request, int $id): Response{
-    $guest = $userRepository->findWithMedias($id);
+    public function guest(UserRepository $userRepository, PaginatorInterface $paginator, Request $request, int $id): Response
+    {
+        $guest = $userRepository->findWithMedias($id);
 
-    if (!$guest || $guest->isBlocked() && !$this->isGranted('ROLE_ADMIN')) {
-        throw $this->createNotFoundException('Cet invité n’est pas accessible.');
-    }
-
-    $pagination = $paginator->paginate(
-        $guest->getMedias(),
-        $request->query->getInt('page', 1),
-        9 // par page
-    );
-
-    return $this->render('front/guest.html.twig', [
-        'guest' => $guest,
-        'pagination' => $pagination
-    ]);
-}
-#[Route('/portfolio/{id}', name: 'portfolio')]
-public function portfolio(
-    AlbumRepository $albumRepo,
-    UserRepository $userRepo,
-    MediaRepository $mediaRepo,
-    PaginatorInterface $paginator,
-    Request $request,
-    ?int $id = null
-): Response {
-    $albums = $albumRepo->findAll();
-    $album = $id ? $albumRepo->find($id) : null;
-
-    if ($album === null) {
-        $user = $userRepo->findOneBy(['admin' => true]);
-        if (!$user) {
-            throw $this->createNotFoundException("Administrateur introuvable pour afficher les médias.");
+        if (!$guest || $guest->isBlocked() && !$this->isGranted('ROLE_ADMIN')) {
+            throw $this->createNotFoundException('Cet invité n’est pas accessible.');
         }
 
-        $query = $mediaRepo->findByUserQuery($user);
-    } else {
-        $query = $mediaRepo->findByAlbumQuery($album);
+        $pagination = $paginator->paginate(
+            $guest->getMedias(),
+            $request->query->getInt('page', 1),
+            9 // par page
+        );
+
+        return $this->render('front/guest.html.twig', [
+            'guest' => $guest,
+            'pagination' => $pagination
+        ]);
     }
 
-    $pagination = $paginator->paginate(
-        $query,
-        $request->query->getInt('page', 1),
-        9
-    );
+    #[Route('/portfolio/{id}', name: 'portfolio')]
+    public function portfolio(AlbumRepository $albumRepo, UserRepository $userRepo, MediaRepository $mediaRepo, PaginatorInterface $paginator, Request $request, ?int $id = null): Response 
+    {
+        $albums = $albumRepo->findAllVisible();
+        $album = $id ? $albumRepo->find($id) : null;
 
-    return $this->render('front/portfolio.html.twig', [
-        'albums' => $albums,
-        'album' => $album,
-        'pagination' => $pagination,
-    ]);
-}
+        // Si un album est sélectionné, on vérifie si son propriétaire est bloqué
+        if ($album !== null) {
+            $owner = $album->getUser();
+            if (!$owner || $owner->isBlocked()) {
+                throw $this->createNotFoundException('Album inaccessible.');
+            }
+
+            $query = $mediaRepo->findByAlbumQuery($album);
+        } else {
+            // Page d’accueil du portfolio : médias de l’admin uniquement si non bloqué
+            $user = $userRepo->findOneBy(['admin' => true]);
+            if (!$user || $user->isBlocked()) {
+                throw $this->createNotFoundException("Portfolio indisponible.");
+            }
+
+            $query = $mediaRepo->findByUserQuery($user);
+        }
+
+        $pagination = $paginator->paginate(
+            $query,
+            $request->query->getInt('page', 1),
+            9
+        );
+
+        return $this->render('front/portfolio.html.twig', [
+            'albums' => $albums,
+            'album' => $album,
+            'pagination' => $pagination,
+        ]);
+    }
 
 
     #[Route('/about', name: 'about')]

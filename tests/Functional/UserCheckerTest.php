@@ -37,14 +37,14 @@ class UserCheckerTest extends TestCase
     }
 
     public function testCheckPreAuthWithUnsupportedUser(): void
-{
-    $checker = new UserChecker();
+    {
+        $checker = new UserChecker();
 
-    $mock = $this->createMock(UserInterface::class);
+        $mock = $this->createMock(UserInterface::class);
 
-    // Aucun comportement attendu, on veut juste passer le "return"
-    $this->expectNotToPerformAssertions();
-    $checker->checkPreAuth($mock);
-}
+        // Aucun comportement attendu, on veut juste passer le "return"
+        $this->expectNotToPerformAssertions();
+        $checker->checkPreAuth($mock);
+    }
 
 }

@@ -4,55 +4,40 @@ namespace App\Tests\Functional;
 
 use App\Entity\User;
 use App\Entity\Album;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
 class AlbumControllerTest extends CustomWebTestCase
 {
     private KernelBrowser $client;
     private \Doctrine\Persistence\ObjectManager $em;
-    private \App\Repository\AlbumRepository $albumRepository;
-    private \App\Repository\UserRepository $userRepository;
+    
 
-protected function setUp(): void
-{
-    parent::setUp();
-    $this->client = static::createClient();
-    $container = static::getContainer();
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-    $this->loadFixtures([
-        \App\DataFixtures\UserFixtures::class,
-        \App\DataFixtures\AlbumFixtures::class,
-    ], $container);
+        $this->client = static::createClient();
+        $container = $this->client->getContainer();
 
-/** @var \Doctrine\Persistence\ManagerRegistry $registry */
-$registry = $container->get('doctrine');
-$this->em = $registry->getManager();
+        $this->loadFixtures([
+            \App\DataFixtures\UserFixtures::class,
+            \App\DataFixtures\AlbumFixtures::class,
+        ], $container);
 
+        /** @var \Doctrine\Persistence\ManagerRegistry $registry */
+        $registry = $container->get('doctrine');
+        $this->em = $registry->getManager();
 
-    /** @var \App\Repository\AlbumRepository $albumRepo */
-    $albumRepo = $this->em->getRepository(Album::class);
-    /** @var \App\Repository\UserRepository $userRepo */
-    $userRepo = $this->em->getRepository(User::class);
-
-    $this->albumRepository = $albumRepo;
-    $this->userRepository = $userRepo;
-
-    self::assertInstanceOf(\App\Repository\AlbumRepository::class, $this->albumRepository);
-    self::assertInstanceOf(\App\Repository\UserRepository::class, $this->userRepository);
-
-    $this->loginIna($this->client);
-}
-
+        $this->loginIna($this->client);
+    }
 
     private function loginIna(KernelBrowser $client): void
     {
         /** @var \Doctrine\Persistence\ManagerRegistry $registry */
-$registry = self::getContainer()->get('doctrine');
-$user = $registry->getManager()
-    ->getRepository(User::class)
-    ->findOneBy(['name' => 'Inatest Zaoui']);
-
+        $registry = self::getContainer()->get('doctrine');
+        $user = $registry->getManager()
+            ->getRepository(User::class)
+            ->findOneBy(['name' => 'Inatest Zaoui']);
 
         $this->assertNotNull($user, "L'utilisateur admin Ina doit exister en base de données.");
         $client->loginUser($user);
@@ -63,8 +48,8 @@ $user = $registry->getManager()
         $this->client->request('GET', '/admin/album');
         $this->assertResponseIsSuccessful();
         $this->assertSelectorExists('h1');
-       $content = (string) $this->client->getResponse()->getContent();
-$this->assertStringContainsString('Albums', $content);
+        $content = (string) $this->client->getResponse()->getContent();
+        $this->assertStringContainsString('Albums', $content);
 
     }
 
@@ -80,6 +65,10 @@ $this->assertStringContainsString('Albums', $content);
         $crawler = $this->client->request('GET', '/admin/album/add');
         $form = $crawler->selectButton('Ajouter')->form();
         $form['album[name]'] = 'Nouvel album test';
+        $form['album[user]'] = (string) $this->getIna()->getId();
+
+
+
 
         $this->client->submit($form);
         $this->assertResponseRedirects('/admin/album');
@@ -90,14 +79,16 @@ $this->assertStringContainsString('Albums', $content);
 
     public function testUpdateAlbum(): void
     {
+        $ina = $this->getIna();
+
         $album = new Album();
         $album->setName('Album original');
+        $album->setUser($ina);
+
         $this->em->persist($album);
         $this->em->flush();
 
-        $id = $album->getId();
-
-        $crawler = $this->client->request('GET', "/admin/album/update/$id");
+        $crawler = $this->client->request('GET', "/admin/album/update/{$album->getId()}");
         $form = $crawler->selectButton('Modifier')->form();
         $form['album[name]'] = 'Titre mis à jour';
         $this->client->submit($form);
@@ -107,18 +98,23 @@ $this->assertStringContainsString('Albums', $content);
         $this->assertSelectorTextContains('body', 'Titre mis à jour');
     }
 
+
     public function testDeleteAlbum(): void
     {
+        $ina = $this->getIna();
+
         $album = new Album();
         $album->setName('À supprimer');
+        $album->setUser($ina);
+
         $this->em->persist($album);
         $this->em->flush();
 
-        $id = $album->getId();
-
-        $this->client->request('GET', "/admin/album/delete/$id");
+        $this->client->request('GET', "/admin/album/delete/{$album->getId()}");
         $this->assertResponseRedirects('/admin/album');
         $this->client->followRedirect();
         $this->assertSelectorTextNotContains('body', 'À supprimer');
     }
+
+
 }

@@ -17,11 +17,18 @@
                         <img src="{{ asset('images/logo.png') }}" alt="Ina Zaoui">
                     </a>
                     <ul class="nav">
-                    {% if is_granted('ROLE_ADMIN') %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ path('admin_guests') }}">Gestion des invités</a>
-                        </li>
-                    {% endif %}
+                        {% if is_granted('ROLE_USER') %}
+                            <li class="nav-item">
+                                <a class="nav-link"  href="{{ path('user_media_add') }}">Ajouter un média</a>
+                            </li>
+                        {% endif %}
+
+
+                        {% if is_granted('ROLE_ADMIN') %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ path('admin_guests') }}">Gestion des invités</a>
+                            </li>
+                        {% endif %}
 
                         <li class="nav-item">
                             <a class="nav-link" href="{{ path('guests') }}">Invités</a>

@@ -16,7 +16,7 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-
+use Symfony\Component\Validator\Constraints\File;
 
 class MediaType extends AbstractType
 {
@@ -24,9 +24,18 @@ class MediaType extends AbstractType
     {
         $builder
             ->add('file', FileType::class, [
-                'label' => 'Image',
-                'required' => false,
-            ])
+    'label' => 'Image',
+    'required' => false,
+    'mapped' => false,
+    'constraints' => [
+        new File([
+            'maxSize' => '2M',
+            'mimeTypes' => ['image/jpeg', 'image/png', 'image/gif'],
+            'mimeTypesMessage' => 'Seules les images JPEG, PNG ou GIF sont autorisées.',
+            'maxSizeMessage' => 'Le fichier ne doit pas dépasser 2 Mo.',
+        ])
+    ]
+])
             ->add('title', TextType::class, [
                 'label' => 'Titre',
             ]);
@@ -50,10 +59,10 @@ class MediaType extends AbstractType
             $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event) use ($options) {
                 $form = $event->getForm();
                 $data = $event->getData();
+if (!is_array($data) || !isset($data['user'])) {
+    return;
+}
 
-                if (!isset($data['user'])) {
-                    return;
-                }
 
                 $userId = $data['user'];
                 /** @var UserRepository $userRepo */

@@ -32,7 +32,12 @@ class UserMediaController extends AbstractController
         $media = new Media();
         $media->setUser($user); // Assure que le média appartient bien à l'utilisateur connecté
 
-        $form = $this->createForm(MediaType::class, $media, ['is_admin' => false,'user' => $this->getUser(),'album_repository' => $doctrine->getRepository(\App\Entity\Album::class),'user_repository' => $doctrine->getRepository(\App\Entity\User::class),]);
+        $form = $this->createForm(MediaType::class, $media, [
+            'is_admin' => false,
+            'user' => $user,
+            'album_repository' => $doctrine->getRepository(\App\Entity\Album::class),
+            'user_repository' => $doctrine->getRepository(\App\Entity\User::class),
+        ]);
 
         $form->handleRequest($request);
 
@@ -42,6 +47,10 @@ class UserMediaController extends AbstractController
             if ($file) {
                 $filename = md5(uniqid()) . '.' . $file->guessExtension();
                 $uploadDir = $this->params->get('upload_dir');
+if (!is_string($uploadDir)) {
+    throw new \RuntimeException('Le paramètre "upload_dir" doit être une chaîne de caractères.');
+}
+
 
                 $file->move($uploadDir, $filename);
                 $media->setPath('uploads/' . $filename);
@@ -51,7 +60,8 @@ class UserMediaController extends AbstractController
 
             // On relie automatiquement le média à l’utilisateur connecté
             if (!$this->isGranted('ROLE_ADMIN')) {
-                $media->setUser($this->getUser());
+                $media->setUser($user);
+
             }
 
             $em = $doctrine->getManager();

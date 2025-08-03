@@ -68,12 +68,18 @@ class MediaController extends AbstractController
     {
         $media = new Media();
 
-        $form = $this->createForm(MediaType::class, $media, [
-            'is_admin' => $this->isGranted('ROLE_ADMIN'),
-            'user' => $this->getUser(),
-            'album_repository' => $doctrine->getRepository(Album::class),
-            'user_repository' => $doctrine->getRepository(User::class),
-        ]);
+        $userId = $request->query->get('user');
+$user = $userId
+    ? $doctrine->getRepository(User::class)->find($userId)
+    : $this->getUser();
+
+$form = $this->createForm(MediaType::class, $media, [
+    'is_admin' => $this->isGranted('ROLE_ADMIN'),
+    'user' => $user,
+    'album_repository' => $doctrine->getRepository(Album::class),
+    'user_repository' => $doctrine->getRepository(User::class),
+]);
+
 
         $form->handleRequest($request);
 
@@ -82,7 +88,12 @@ class MediaController extends AbstractController
             if ($file) {
                 $filename = md5(uniqid()) . '.' . $file->guessExtension();
                 $uploadDir = $this->params->get('upload_dir');
-                $file->move($uploadDir, $filename);
+if (!is_string($uploadDir)) {
+    throw new \RuntimeException('Le paramètre "upload_dir" doit être une chaîne de caractères.');
+}
+
+$file->move($uploadDir, $filename);
+
                 $media->setPath('uploads/' . $filename);
             } else {
                 $media->setPath('uploads/default.jpg');
@@ -98,9 +109,13 @@ class MediaController extends AbstractController
                     throw new \RuntimeException('Impossible d’ajouter un média pour un utilisateur bloqué.');
                 }
 
-            } else {
-                $media->setUser($this->getUser());
-            }
+           } else {
+    $user = $this->getUser();
+    if (!$user instanceof \App\Entity\User) {
+        throw new \LogicException('Utilisateur connecté invalide.');
+    }
+    $media->setUser($user);
+}
 
             $em = $doctrine->getManager();
             $em->persist($media);
@@ -131,8 +146,13 @@ class MediaController extends AbstractController
         $em->flush();
 
         $path = $media->getPath();
-        $uploadDir = $this->params->get('upload_dir');
-        $fullPath = $uploadDir . '/' . basename($path);
+       $uploadDir = $this->params->get('upload_dir');
+if (!is_string($uploadDir)) {
+    throw new \RuntimeException('Le paramètre "upload_dir" doit être une chaîne de caractères.');
+}
+
+$fullPath = $uploadDir . '/' . basename($path);
+
 
         if (file_exists($fullPath) && is_file($fullPath)) {
             unlink($fullPath);

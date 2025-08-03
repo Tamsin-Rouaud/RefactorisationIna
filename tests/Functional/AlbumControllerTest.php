@@ -65,7 +65,9 @@ class AlbumControllerTest extends CustomWebTestCase
         $crawler = $this->client->request('GET', '/admin/album/add');
         $form = $crawler->selectButton('Ajouter')->form();
         $form['album[name]'] = 'Nouvel album test';
-        $form['album[user]'] = $this->getIna()->getId();
+        $form['album[user]'] = (string) $this->getIna()->getId();
+
+
 
 
         $this->client->submit($form);

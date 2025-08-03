@@ -74,6 +74,7 @@ class AlbumController extends AbstractController
             ->getResult();
 
         $data = [];
+        /** @var Album[] $albums */
         foreach ($albums as $album) {
             $data[] = [
                 'id' => $album->getId(),

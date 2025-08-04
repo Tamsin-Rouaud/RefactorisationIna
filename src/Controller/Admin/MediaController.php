@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class MediaController extends AbstractController
 {
@@ -69,31 +70,30 @@ class MediaController extends AbstractController
         $media = new Media();
 
         $userId = $request->query->get('user');
-$user = $userId
-    ? $doctrine->getRepository(User::class)->find($userId)
-    : $this->getUser();
+        $user = $userId
+            ? $doctrine->getRepository(User::class)->find($userId)
+            : $this->getUser();
 
-$form = $this->createForm(MediaType::class, $media, [
-    'is_admin' => $this->isGranted('ROLE_ADMIN'),
-    'user' => $user,
-    'album_repository' => $doctrine->getRepository(Album::class),
-    'user_repository' => $doctrine->getRepository(User::class),
-]);
-
+        $form = $this->createForm(MediaType::class, $media, [
+            'is_admin' => $this->isGranted('ROLE_ADMIN'),
+            'user' => $user,
+            'album_repository' => $doctrine->getRepository(Album::class),
+            'user_repository' => $doctrine->getRepository(User::class),
+        ]);
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $file = $media->getFile();
-            if ($file) {
+            /** @var UploadedFile|null $file */
+            $file = $form->get('file')->getData();
+
+            if ($file instanceof UploadedFile) {
                 $filename = md5(uniqid()) . '.' . $file->guessExtension();
                 $uploadDir = $this->params->get('upload_dir');
-if (!is_string($uploadDir)) {
-    throw new \RuntimeException('Le paramètre "upload_dir" doit être une chaîne de caractères.');
-}
-
-$file->move($uploadDir, $filename);
-
+                if (!is_string($uploadDir)) {
+                    throw new \RuntimeException('Le paramètre "upload_dir" doit être une chaîne de caractères.');
+                }
+                $file->move($uploadDir, $filename);
                 $media->setPath('uploads/' . $filename);
             } else {
                 $media->setPath('uploads/default.jpg');
@@ -104,18 +104,16 @@ $file->move($uploadDir, $filename);
                     throw new \RuntimeException('Veuillez sélectionner un utilisateur.');
                 }
 
-                // Bloquer si l’admin choisit un utilisateur bloqué
                 if ($media->getUser()->isBlocked()) {
                     throw new \RuntimeException('Impossible d’ajouter un média pour un utilisateur bloqué.');
                 }
-
-           } else {
-    $user = $this->getUser();
-    if (!$user instanceof \App\Entity\User) {
-        throw new \LogicException('Utilisateur connecté invalide.');
-    }
-    $media->setUser($user);
-}
+            } else {
+                $user = $this->getUser();
+                if (!$user instanceof \App\Entity\User) {
+                    throw new \LogicException('Utilisateur connecté invalide.');
+                }
+                $media->setUser($user);
+            }
 
             $em = $doctrine->getManager();
             $em->persist($media);
@@ -146,12 +144,12 @@ $file->move($uploadDir, $filename);
         $em->flush();
 
         $path = $media->getPath();
-       $uploadDir = $this->params->get('upload_dir');
-if (!is_string($uploadDir)) {
-    throw new \RuntimeException('Le paramètre "upload_dir" doit être une chaîne de caractères.');
-}
+        $uploadDir = $this->params->get('upload_dir');
+        if (!is_string($uploadDir)) {
+            throw new \RuntimeException('Le paramètre "upload_dir" doit être une chaîne de caractères.');
+        }
 
-$fullPath = $uploadDir . '/' . basename($path);
+        $fullPath = $uploadDir . '/' . basename($path);
 
 
         if (file_exists($fullPath) && is_file($fullPath)) {

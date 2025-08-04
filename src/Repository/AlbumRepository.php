@@ -25,17 +25,17 @@ class AlbumRepository extends ServiceEntityRepository
     }
 
     /**
- * @return Album[] 
- */
-public function findAllVisible(): array
-{
-    /** @var Album[] */
-    return $this->createQueryBuilder('a')
-        ->join('a.user', 'u')
-        ->where('u.isBlocked = false')
-        ->getQuery()
-        ->getResult();
-}
+    * @return Album[] 
+    */
+    public function findAllVisible(): array
+    {
+        /** @var Album[] */
+        return $this->createQueryBuilder('a')
+            ->join('a.user', 'u')
+            ->where('u.isBlocked = false')
+            ->getQuery()
+            ->getResult();
+    }
 
 
 

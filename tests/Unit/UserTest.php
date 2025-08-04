@@ -69,22 +69,22 @@ class UserTest extends TestCase
     }
 
     public function testSetMediasReplacesCollection(): void
-{
-    $user = new User();
+    {
+        $user = new User();
 
-    $media1 = new \App\Entity\Media();
-$media2 = new \App\Entity\Media();
+        $media1 = new \App\Entity\Media();
+        $media2 = new \App\Entity\Media();
 
 
-    $collection = new \Doctrine\Common\Collections\ArrayCollection([$media1, $media2]);
+        $collection = new \Doctrine\Common\Collections\ArrayCollection([$media1, $media2]);
 
-    /**
- * @param Collection<int, object> $medias
- */
-    $user->setMedias($collection);
+        /**
+        * @param Collection<int, object> $medias
+        */
+        $user->setMedias($collection);
 
-    $this->assertCount(2, $user->getMedias());
-    $this->assertSame($collection, $user->getMedias());
-}
+        $this->assertCount(2, $user->getMedias());
+        $this->assertSame($collection, $user->getMedias());
+    }
 
 }

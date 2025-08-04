@@ -5,7 +5,6 @@ namespace App\Tests\Functional;
 use App\DataFixtures\UserFixtures;
 use App\Entity\User;
 use App\Repository\UserRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
 class AdminGuestControllerTest extends CustomWebTestCase

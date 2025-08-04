@@ -55,7 +55,7 @@ class UserRepositoryTest extends KernelTestCase
     }
 
 
-   public function testUpgradePasswordThrowsExceptionWithInvalidUser(): void
+    public function testUpgradePasswordThrowsExceptionWithInvalidUser(): void
     {
         $stub = new class implements PasswordAuthenticatedUserInterface {
             public function getPassword(): string

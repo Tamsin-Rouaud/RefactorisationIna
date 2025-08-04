@@ -5,7 +5,7 @@ namespace App\Entity;
 use App\Repository\AlbumRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-
+use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
@@ -16,8 +16,13 @@ class Album
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column]
-    private string $name;
+
+
+    #[ORM\Column(type: 'string', nullable: false)]
+    #[Assert\NotBlank(message: 'Le nom de l\'album est obligatoire.')]
+    private string $name = '';
+
+
 
     /** @var Collection<int, Media> */
     #[ORM\OneToMany(mappedBy: "album", targetEntity: Media::class, cascade: ['remove'])]
@@ -59,10 +64,11 @@ class Album
         return $this->name;
     }
 
-    public function setName(string $name): void
+    public function setName(?string $name): void
     {
-        $this->name = $name;
+    $this->name = $name ?? '';
     }
+
 
     public function getUser(): ?User
     {

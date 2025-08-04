@@ -55,17 +55,17 @@ class MediaRepository extends ServiceEntityRepository
             ->getQuery();
     }
     /**
- * @return Media[] 
- */
-public function findAllVisible(): array
-{
-    /** @var Media[] */
-    return $this->createQueryBuilder('m')
-        ->join('m.user', 'u')
-        ->where('u.isBlocked = false')
-        ->getQuery()
-        ->getResult();
-}
+    * @return Media[] 
+    */
+    public function findAllVisible(): array
+    {
+        /** @var Media[] */
+        return $this->createQueryBuilder('m')
+            ->join('m.user', 'u')
+            ->where('u.isBlocked = false')
+            ->getQuery()
+            ->getResult();
+    }
 
 
 }

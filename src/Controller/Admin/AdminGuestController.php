@@ -20,7 +20,6 @@ class AdminGuestController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        // Récupère uniquement les utilisateurs non-admin
         $guests = $userRepository->findBy(['admin' => false]);
 
         return $this->render('admin/guests/index.html.twig', [

@@ -23,22 +23,22 @@ class MediaType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('file', FileType::class, [
-    'label' => 'Image',
-    'required' => false,
-    'mapped' => false,
-    'constraints' => [
-        new File([
-            'maxSize' => '2M',
-            'mimeTypes' => ['image/jpeg', 'image/png', 'image/gif'],
-            'mimeTypesMessage' => 'Seules les images JPEG, PNG ou GIF sont autorisées.',
-            'maxSizeMessage' => 'Le fichier ne doit pas dépasser 2 Mo.',
+        ->add('file', FileType::class, [
+            'label' => 'Image',
+            'required' => false,
+            
+            'constraints' => [
+                new File([
+                    'maxSize' => '2M',
+                    'mimeTypes' => ['image/jpeg', 'image/png', 'image/gif'],
+                    'mimeTypesMessage' => 'Seules les images JPEG, PNG ou GIF sont autorisées.',
+                    'maxSizeMessage' => 'Le fichier ne doit pas dépasser 2 Mo.',
+                ])
+            ]
         ])
-    ]
-])
-            ->add('title', TextType::class, [
-                'label' => 'Titre',
-            ]);
+        ->add('title', TextType::class, [
+            'label' => 'Titre',
+        ]);
 
         if ($options['is_admin']) {
             $builder->add('user', EntityType::class, [
@@ -48,20 +48,20 @@ class MediaType extends AbstractType
                 'placeholder' => 'Sélectionnez un utilisateur',
             ]);
 
-            // Initialiser le champ album vide (sera rempli dynamiquement via JS ou PRE_SUBMIT)
+            
             $builder->add('album', ChoiceType::class, [
                 'label' => 'Album',
                 'choices' => [],
                 'placeholder' => 'Sélectionnez un utilisateur d’abord',
             ]);
 
-            // Lors du POST : reconstruire le champ album avec les bons choix
+            
             $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event) use ($options) {
                 $form = $event->getForm();
                 $data = $event->getData();
-if (!is_array($data) || !isset($data['user'])) {
-    return;
-}
+                if (!is_array($data) || !isset($data['user'])) {
+                    return;
+                }
 
 
                 $userId = $data['user'];

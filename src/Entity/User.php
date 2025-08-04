@@ -192,7 +192,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeAlbum(Album $album): static
     {
         if ($this->albums->removeElement($album)) {
-            // set the owning side to null (unless already changed)
+           
             if ($album->getUser() === $this) {
                 $album->setUser(null);
             }

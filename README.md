@@ -1,4 +1,4 @@
-![CI Symfony](https://github.com/ton-compte/ton-repo/actions/workflows/ci.yml/badge.svg)
+![CI Symfony](https://github.com/tamsin-rouaud/RefactorisationIna/actions/workflows/ci.yml/badge.svg)
 
 # 📸 Projet Ina Zaoui - Refactorisation Symfony
 
@@ -134,6 +134,7 @@ php bin/phpunit --coverage-html var/coverage
 ```
 
 Objectif : **≥ 70 %**
+Atteint : **≥ 95 %**
 
 ---
 

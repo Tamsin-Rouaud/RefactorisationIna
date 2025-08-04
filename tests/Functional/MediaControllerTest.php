@@ -4,7 +4,6 @@ namespace App\Tests\Controller\Admin;
 
 use App\Entity\Media;
 use App\Entity\User;
-use App\Entity\Album;
 use App\Tests\Functional\CustomWebTestCase;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -78,192 +77,99 @@ class MediaControllerTest extends CustomWebTestCase
     }
 
 
-public function testInaCanAddMedia(): void
-{
-    $client = static::createClient();
-    $this->loadFixtures([
-        \App\DataFixtures\UserFixtures::class,
-        \App\DataFixtures\AlbumFixtures::class,
-    ], static::getContainer());
+    public function testInaCanAddMedia(): void
+    {
+        $client = static::createClient();
+        $this->loadFixtures([
+            \App\DataFixtures\UserFixtures::class,
+            \App\DataFixtures\AlbumFixtures::class,
+        ], static::getContainer());
 
-    $ina = $this->getIna();
-    $album = $this->getAlbumForUser($ina);
-    $client->loginUser($ina);
+        $ina = $this->getIna();
+        $album = $this->getAlbumForUser($ina);
+        $client->loginUser($ina);
 
-    // 1. Charger le formulaire (initial, champ album vide)
-    $crawler = $client->request('GET', '/admin/media/add');
-    $form = $crawler->selectButton('Ajouter')->form();
+        // 1. Charger le formulaire (initial, champ album vide)
+        $crawler = $client->request('GET', '/admin/media/add');
+        $form = $crawler->selectButton('Ajouter')->form();
 
-    // 2. Simuler première soumission avec seulement l’utilisateur
-    $crawler = $client->submit($form, [
-        'media[user]' => $ina->getId(),
-    ]);
+        // 2. Simuler première soumission avec seulement l’utilisateur
+        $crawler = $client->submit($form, [
+            'media[user]' => $ina->getId(),
+        ]);
 
-    // 3. Nouveau formulaire généré après PRE_SUBMIT avec albums disponibles
-    $form = $crawler->selectButton('Ajouter')->form();
+        // 3. Nouveau formulaire généré après PRE_SUBMIT avec albums disponibles
+        $form = $crawler->selectButton('Ajouter')->form();
 
-    // Créer une image temporaire
-    $file = $this->createTempImageFile();
+        // Créer une image temporaire
+        $file = $this->createTempImageFile();
 
-    // 4. Soumettre avec tous les champs, y compris le fichier
-    $client->submit($form, [
-        'media[title]' => 'Image valide',
-        'media[user]' => (string) $ina->getId(),
-        'media[album]' => (string) $album->getId(),
-    ], [
-        'media[file]' => $file,
-    ]);
+        // 4. Soumettre avec tous les champs, y compris le fichier
+        $client->submit($form, [
+            'media[title]' => 'Image valide',
+            'media[user]' => (string) $ina->getId(),
+            'media[album]' => (string) $album->getId(),
+        ], [
+            'media[file]' => $file,
+        ]);
 
-    // 5. Vérifier que l’upload a réussi
-    $this->assertResponseRedirects('/admin/media');
-    $client->followRedirect();
-    $this->assertSelectorTextContains('body', 'Image valide');
+        // 5. Vérifier que l’upload a réussi
+        $this->assertResponseRedirects('/admin/media');
+        $client->followRedirect();
+        $this->assertSelectorTextContains('body', 'Image valide');
 
-    // Vérifier la présence du fichier sur le disque
-    /** @var \Doctrine\Persistence\ManagerRegistry $doctrine */
-    $doctrine = $this->getDoctrine();
-    $mediaRepo = $doctrine->getRepository(Media::class);
-    $media = $mediaRepo->findOneBy(['title' => 'Image valide']);
-    $this->assertNotNull($media);
+        // Vérifier la présence du fichier sur le disque
+        /** @var \Doctrine\Persistence\ManagerRegistry $doctrine */
+        $doctrine = $this->getDoctrine();
+        $mediaRepo = $doctrine->getRepository(Media::class);
+        $media = $mediaRepo->findOneBy(['title' => 'Image valide']);
+        $this->assertNotNull($media);
 
-    $uploadDir = static::getContainer()->getParameter('upload_dir');
-    if (!is_string($uploadDir)) {
-        $this->fail('Le paramètre "upload_dir" doit être une chaîne de caractères.');
+        $uploadDir = static::getContainer()->getParameter('upload_dir');
+        if (!is_string($uploadDir)) {
+            $this->fail('Le paramètre "upload_dir" doit être une chaîne de caractères.');
+        }
+
+        $uploadPath = $uploadDir . '/' . basename($media->getPath());
+        $this->assertFileExists($uploadPath);
+
+        // Nettoyage du fichier temporaire
+        $this->deleteFileIfExists($file->getPathname());
     }
 
-    $uploadPath = $uploadDir . '/' . basename($media->getPath());
-    $this->assertFileExists($uploadPath);
+    public function testInaCannotAddMediaWithoutTitle(): void
+    {
+        $client = static::createClient();
+        $this->loadFixtures([
+            \App\DataFixtures\UserFixtures::class,
+            \App\DataFixtures\AlbumFixtures::class,
+        ], static::getContainer());
 
-    // Nettoyage du fichier temporaire
-    $this->deleteFileIfExists($file->getPathname());
-}
+        $ina = $this->getIna();
+        $album = $this->getAlbumForUser($ina);
+        $client->loginUser($ina);
 
+        // Formulaire initial
+        $crawler = $client->request('GET', '/admin/media/add');
+        $form = $crawler->selectButton('Ajouter')->form();
 
-// public function testInaCannotAddNonImageFile(): void
-// {
-//     $client = static::createClient();
-//     $this->loadFixtures([
-//         \App\DataFixtures\UserFixtures::class,
-//         \App\DataFixtures\AlbumFixtures::class,
-//     ], static::getContainer());
+        // Étape intermédiaire : charger les albums
+        $crawler = $client->submit($form, [
+            'media[user]' => $ina->getId(),
+        ]);
 
-//     $ina = $this->getIna();
-//     $album = $this->getAlbumForUser($ina);
-//     $client->loginUser($ina);
+        $form = $crawler->selectButton('Ajouter')->form();
 
-//     // Étape 1
-//     $crawler = $client->request('GET', '/admin/media/add');
-//     $form = $crawler->selectButton('Ajouter')->form();
+        // Envoi sans titre
+        $client->submit($form, [
+            'media[title]' => '',
+            'media[user]' => $ina->getId(),
+            'media[album]' => $album->getId(),
+        ]);
 
-//     // Étape 2
-//     $crawler = $client->submit($form, [
-//         'media[user]' => $ina->getId(),
-//     ]);
-//     $form = $crawler->selectButton('Ajouter')->form();
-
-//     // Faux fichier
-//     $fakePath = sys_get_temp_dir() . '/fake.txt';
-//     file_put_contents($fakePath, 'not an image');
-//     $file = new UploadedFile($fakePath, 'fake.txt', 'text/plain', null, true);
-
-//     // Étape 3
-//     $client->submit($form, [
-//         'media[title]' => 'Image invalide',
-//         'media[user]' => $ina->getId(),
-//         'media[album]' => $album->getId(),
-//     ], [
-//         'media[file]' => $file,
-//     ]);
-
-//     // Suivre la redirection et vérifier le message
-//     $crawler = $client->followRedirect();
-//     $this->assertSelectorTextContains('body', 'Seules les images JPEG, PNG ou GIF sont autorisées.');
-
-//     unlink($fakePath);
-// }
-
-// public function testInaCannotAddTooLargeImage(): void
-// {
-//     $client = static::createClient();
-//     $this->loadFixtures([
-//         \App\DataFixtures\UserFixtures::class,
-//         \App\DataFixtures\AlbumFixtures::class,
-//     ], static::getContainer());
-
-//     $ina = $this->getIna();
-//     $album = $this->getAlbumForUser($ina);
-//     $client->loginUser($ina);
-
-//     // Étape 1
-//     $crawler = $client->request('GET', '/admin/media/add');
-//     $form = $crawler->selectButton('Ajouter')->form();
-
-//     // Étape 2
-//     $crawler = $client->submit($form, [
-//         'media[user]' => $ina->getId(),
-//     ]);
-//     $form = $crawler->selectButton('Ajouter')->form();
-
-//     // Fichier trop gros
-//     $path = sys_get_temp_dir() . '/big.jpg';
-//     file_put_contents($path, str_repeat('a', 3 * 1024 * 1024));
-//     $file = new UploadedFile($path, 'big.jpg', 'image/jpeg', null, true);
-
-//     // Étape 3
-//     $client->submit($form, [
-//         'media[title]' => 'Trop lourd',
-//         'media[user]' => $ina->getId(),
-//         'media[album]' => $album->getId(),
-//     ], [
-//         'media[file]' => $file,
-//     ]);
-
-//     $crawler = $client->followRedirect();
-//     $this->assertSelectorTextContains('div', 'Le fichier ne doit pas dépasser 2 Mo.');
-
-//     unlink($path);
-// }
-
-
-
-
-
-   public function testInaCannotAddMediaWithoutTitle(): void
-{
-    $client = static::createClient();
-    $this->loadFixtures([
-        \App\DataFixtures\UserFixtures::class,
-        \App\DataFixtures\AlbumFixtures::class,
-    ], static::getContainer());
-
-    $ina = $this->getIna();
-    $album = $this->getAlbumForUser($ina);
-    $client->loginUser($ina);
-
-    // Formulaire initial
-    $crawler = $client->request('GET', '/admin/media/add');
-    $form = $crawler->selectButton('Ajouter')->form();
-
-    // Étape intermédiaire : charger les albums
-    $crawler = $client->submit($form, [
-        'media[user]' => $ina->getId(),
-    ]);
-
-    $form = $crawler->selectButton('Ajouter')->form();
-
-    // Envoi sans titre
-    $client->submit($form, [
-        'media[title]' => '',
-        'media[user]' => $ina->getId(),
-        'media[album]' => $album->getId(),
-    ]);
-
-    $this->assertResponseStatusCodeSame(200);
-    $this->assertSelectorTextContains('body', 'titre');
-}
-
-
-
+        $this->assertResponseStatusCodeSame(200);
+        $this->assertSelectorTextContains('body', 'titre');
+    }
 
     public function testInaCanAddMediaWithoutAlbum(): void
     {
@@ -318,7 +224,7 @@ public function testInaCanAddMedia(): void
     {
         $client = static::createClient();
 
-    $this->loadFixtures([
+        $this->loadFixtures([
             \App\DataFixtures\UserFixtures::class,
             \App\DataFixtures\AlbumFixtures::class,
         ], static::getContainer());
@@ -414,53 +320,131 @@ public function testInaCanAddMedia(): void
     }
 
 
-  public function testInaCanAddMediaWithoutImage(): void
-{
-    $client = static::createClient();
-    $this->loadFixtures([
-        \App\DataFixtures\UserFixtures::class,
-        \App\DataFixtures\AlbumFixtures::class,
-    ], static::getContainer());
+    public function testInaCanAddMediaWithoutImage(): void
+    {
+        $client = static::createClient();
+        $this->loadFixtures([
+            \App\DataFixtures\UserFixtures::class,
+            \App\DataFixtures\AlbumFixtures::class,
+        ], static::getContainer());
 
-    $ina = $this->getIna();
-    $album = $this->getAlbumForUser($ina);
-    $client->loginUser($ina);
+        $ina = $this->getIna();
+        $album = $this->getAlbumForUser($ina);
+        $client->loginUser($ina);
 
-    // Étape 1 : charger le formulaire vide
-    $crawler = $client->request('GET', '/admin/media/add');
-    $form = $crawler->selectButton('Ajouter')->form();
+        // Étape 1 : charger le formulaire vide
+        $crawler = $client->request('GET', '/admin/media/add');
+        $form = $crawler->selectButton('Ajouter')->form();
 
-    // Étape 2 : soumettre seulement l’utilisateur pour déclencher PRE_SUBMIT
-    $crawler = $client->submit($form, [
-        'media[user]' => $ina->getId(),
-    ]);
+        // Étape 2 : soumettre seulement l’utilisateur pour déclencher PRE_SUBMIT
+        $crawler = $client->submit($form, [
+            'media[user]' => $ina->getId(),
+        ]);
 
-    // Étape 3 : récupérer le formulaire mis à jour avec les albums
-    $form = $crawler->selectButton('Ajouter')->form();
+        // Étape 3 : récupérer le formulaire mis à jour avec les albums
+        $form = $crawler->selectButton('Ajouter')->form();
 
-    // Étape 4 : soumettre tous les champs sauf l’image
-    $client->submit($form, [
-        'media[title]' => 'Image absente',
-        'media[user]' => $ina->getId(),
-        'media[album]' => $album->getId(),
-        // pas de media[file]
-    ]);
+        // Étape 4 : soumettre tous les champs sauf l’image
+        $client->submit($form, [
+            'media[title]' => 'Image absente',
+            'media[user]' => $ina->getId(),
+            'media[album]' => $album->getId(),
+            // pas de media[file]
+        ]);
 
-    // Vérification du résultat
-    $this->assertResponseRedirects('/admin/media');
-    $client->followRedirect();
+        // Vérification du résultat
+        $this->assertResponseRedirects('/admin/media');
+        $client->followRedirect();
+
+        /** @var \Doctrine\Persistence\ManagerRegistry $doctrine */
+        $doctrine = $this->getDoctrine();
+        $mediaRepo= $doctrine->getRepository(Media::class);
+        // $mediaRepo = static::getContainer()->get('doctrine')->getRepository(\App\Entity\Media::class);
+        $media = $mediaRepo->findOneBy(['title' => 'Image absente']);
+
+        $this->assertNotNull($media);
+        $this->assertSame('uploads/default.jpg', $media->getPath());
+    }
+
+    public function testMediaAddFormWithUserIdInQuery(): void
+    {
+        $client = static::createClient();
+        $this->loadFixtures([
+            \App\DataFixtures\UserFixtures::class,
+        ], static::getContainer());
+
+        $ina = $this->getIna();
+        $client->loginUser($ina);
+
+        $client->request('GET', '/admin/media/add?user=' . $ina->getId());
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('form');
+    }
+
+    public function testAdminSubmitWithoutUserThrowsError(): void
+    {
+        $client = static::createClient();
+        $this->loadFixtures([
+            \App\DataFixtures\UserFixtures::class,
+        ], static::getContainer());
+
+        $ina = $this->getIna(); // admin
+        $client->loginUser($ina);
+
+        $crawler = $client->request('GET', '/admin/media/add');
+        $form = $crawler->selectButton('Ajouter')->form();
+
+        $formData = $form->getPhpValues();
+        $formData['media']['title'] = 'Test sans user';
+        unset($formData['media']['user']);      // on simule l'oubli
+        unset($formData['media']['album']);     // laisser vide pour éviter l’erreur
+
+        $form->setValues($formData);
+        $client->catchExceptions(false);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Veuillez sélectionner un utilisateur.');
+
+        $client->submit($form);
+    }
+
+
+    public function testAdminCannotAddMediaForBlockedUser(): void
+    {
+        $client = static::createClient();
+        $this->loadFixtures([
+            \App\DataFixtures\UserFixtures::class,
+            \App\DataFixtures\AlbumFixtures::class,
+        ], static::getContainer());
+
+        $ina = $this->getIna(); // admin
+        $client->loginUser($ina);
+
 
     /** @var \Doctrine\Persistence\ManagerRegistry $doctrine */
-    $doctrine = $this->getDoctrine();
-    $mediaRepo= $doctrine->getRepository(Media::class);
-    // $mediaRepo = static::getContainer()->get('doctrine')->getRepository(\App\Entity\Media::class);
-    $media = $mediaRepo->findOneBy(['title' => 'Image absente']);
+    $doctrine = static::getContainer()->get('doctrine');
 
-    $this->assertNotNull($media);
-    $this->assertSame('uploads/default.jpg', $media->getPath());
-}
+    /** @var \App\Repository\UserRepository $userRepo */
+    $userRepo = $doctrine->getRepository(User::class);
 
+        $blockedUser = $userRepo->findOneBy(['isBlocked' => true]);
+        $this->assertNotNull($blockedUser);
 
+        $crawler = $client->request('GET', '/admin/media/add');
+        $form = $crawler->selectButton('Ajouter')->form();
+
+        $formData = $form->getPhpValues();
+        $formData['media']['title'] = 'Test utilisateur bloqué';
+        $formData['media']['user'] = $blockedUser->getId();
+
+        $form->setValues($formData);
+
+        $client->catchExceptions(false);
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Impossible d’ajouter un média pour un utilisateur bloqué.');
+
+        $client->submit($form);
+    }
 
 
 }

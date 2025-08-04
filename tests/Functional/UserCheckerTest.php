@@ -42,7 +42,7 @@ class UserCheckerTest extends TestCase
 
         $mock = $this->createMock(UserInterface::class);
 
-        // Aucun comportement attendu, on veut juste passer le "return"
+       
         $this->expectNotToPerformAssertions();
         $checker->checkPreAuth($mock);
     }

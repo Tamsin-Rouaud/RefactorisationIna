@@ -3,6 +3,7 @@
 namespace App\Tests\Entity;
 
 use App\Entity\Album;
+use App\Entity\Media;
 use App\Entity\User;
 
 use PHPUnit\Framework\TestCase;
@@ -36,25 +37,37 @@ class AlbumTest extends TestCase
 
         $this->assertSame($user, $album->getUser());
     }
-public function testAddAndRemoveMedia(): void
-{
-    $album = new Album();
-    $media = new \App\Entity\Media();
+    public function testAddAndRemoveMedia(): void
+    {
+        $album = new Album();
+        $media = new \App\Entity\Media();
 
-    // Avant ajout
-    $this->assertCount(0, $album->getMedias());
-    $this->assertNull($media->getAlbum());
+        // Avant ajout
+        $this->assertCount(0, $album->getMedias());
+        $this->assertNull($media->getAlbum());
 
-    // Ajout
-    $album->addMedia($media);
-    $this->assertCount(1, $album->getMedias());
-    $this->assertSame($album, $media->getAlbum());
+        // Ajout
+        $album->addMedia($media);
+        $this->assertCount(1, $album->getMedias());
+        $this->assertSame($album, $media->getAlbum());
 
-    // Suppression
-    $album->removeMedia($media);
-    $this->assertCount(0, $album->getMedias());
-    $this->assertNull($media->getAlbum());
-}
+        // Suppression
+        $album->removeMedia($media);
+        $this->assertCount(0, $album->getMedias());
+        $this->assertNull($media->getAlbum());
+    }
 
+    public function testSetMedias(): void
+    {
+        $media1 = new Media();
+        $media2 = new Media();
+
+        $collection = new ArrayCollection([$media1, $media2]);
+
+        $album = new Album();
+        $album->setMedias($collection);
+
+        $this->assertSame($collection, $album->getMedias());
+    }
 
 }

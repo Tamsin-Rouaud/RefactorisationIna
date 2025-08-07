@@ -36,47 +36,105 @@ Format recommandé :
 
 Exemples :
 
-- `feat: ajouter la gestion des invités`
-- `fix: corriger la vérification des fichiers`
-- `refacto: nettoyer le contrôleur MediaController`
-- `test: ajouter des tests fonctionnels sur la suppression d’un invité`
-- `docs: rédiger la documentation de contribution`
-- `perf: améliorer le temps de chargement de la page invités`
-- `ci: ajouter pipeline GitHub Actions`
+- `Feat: ajouter la gestion des invités`
+- `Fix: corriger la vérification des fichiers`
+- `Refacto: nettoyer le contrôleur MediaController`
+- `Test: ajouter des tests fonctionnels sur la suppression d’un invité`
+- `Docs: rédiger la documentation de contribution`
+- `Perf: améliorer le temps de chargement de la page invités`
+- `Ci: ajouter pipeline GitHub Actions`
 
 ---
 
 ## ✅ Étapes pour contribuer
 
-1. **Forkez** ce dépôt si vous êtes externe.
-2. **Créez une branche** à partir de `main`.
-3. **Développez** votre fonctionnalité ou correctif.
-4. **Testez** votre code avant de le soumettre.
-5. **Soumettez une Pull Request (PR)** vers `main` :
-   - Titre clair
-   - Description explicite : objectif, modifications, lien issue
+### 🧑‍💻 En solo (merge direct autorisé)
+
+Si vous travaillez **seul(e)** sur le projet, vous pouvez :
+
+1. Créer une branche depuis `main` :
+
+```bash
+git checkout main
+git pull origin main
+git checkout -b feat/ma-fonctionnalite
+```
+
+2. Faire vos modifications et commits :
+
+```bash
+git add .
+git commit -m "Feat: ajouter la gestion des invités"
+```
+
+3. Pousser la branche :
+
+```bash
+git push origin feat/ma-fonctionnalite
+```
+
+4. Merger localement dans `main` :
+
+```bash
+git checkout main
+git pull origin main
+git merge feat/ma-fonctionnalite
+git push origin main
+```
+
+---
+
+### 👥 En équipe (Pull Request obligatoire)
+
+Si vous travaillez à **plusieurs**, merci de :
+
+1. Créer une branche dédiée
+2. Pousser vos changements
+3. Ouvrir une **Pull Request (PR)** vers `main` depuis GitHub
+4. Attendre au **minimum une relecture avant de merger**
+5. Mener la revue technique (tests, CI, lisibilité)
 
 ---
 
 ## 🧪 Bonnes pratiques
 
-- Toujours **accompagner les nouvelles fonctionnalités de tests**.
-- Utiliser des **outils d’analyse statique** (`phpstan`, `php-cs-fixer`).
-- S’assurer que la **pipeline CI** passe sans erreurs.
-- Respecter les **standards PSR-12**.
-- Supprimer tout `dump()`, `dd()` ou code mort.
-- Documenter les classes ou services complexes.
+- Ajouter des **tests** pour toute nouvelle fonctionnalité
+- Utiliser **PHPStan niveau 9** pour l’analyse statique
+- Respecter les **standards PSR-12**
+- Ne laisser aucun `dump()`, `dd()` ou code mort
+- Vérifier que la **CI passe sans erreur**
+
+---
+
+## 💾 Données de test
+
+Pour lancer le projet avec un jeu de données réaliste :
+
+- Télécharger le backup via le lien dans le `README.md`
+- Placer `uploads/` dans `public/uploads`
+- Importer le fichier `.sql` dans votre base locale
 
 ---
 
 ## 🚥 Politique de validation
 
-Une PR ne pourra être fusionnée que si :
+Une contribution peut être mergée si :
 
-- Elle a été **relue** par au moins une personne.
-- Elle respecte les **tests et la CI**.
-- Elle apporte une **valeur claire** au projet.
+- Elle est relue (si travail d'équipe)
+- Tous les tests passent
+- La CI est verte
+- Elle apporte une **valeur claire** au projet
 
 ---
 
-Merci pour vos contributions, vos retours et votre implication ! 🙌
+## 💬 Besoin d'aide ou question ?
+
+Merci d’ouvrir une **Issue** si vous avez :
+
+- Une proposition de fonctionnalité
+- Un bug à signaler
+- Une question technique liée au projet
+
+---
+
+Merci pour votre contribution 🙌

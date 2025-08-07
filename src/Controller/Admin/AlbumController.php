@@ -44,9 +44,10 @@ class AlbumController extends AbstractController
             // Si ce n’est pas un admin, on force l’attribution à l’utilisateur connecté
             if (!$this->isGranted('ROLE_ADMIN')) {
                 $user = $this->getUser();
-                if (!$user instanceof \App\Entity\User) {
-                    throw new \LogicException('Utilisateur connecté invalide.');
-                }
+                
+                $user = $this->getUser();
+                assert($user instanceof \App\Entity\User);
+
                 $album->setUser($user);
             }
 
@@ -100,7 +101,7 @@ class AlbumController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // L’album est déjà lié à son user => pas besoin de setUser()
+            
             $doctrine->getManager()->flush();
 
             return $this->redirectToRoute('admin_album_index');

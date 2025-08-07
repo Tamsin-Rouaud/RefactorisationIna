@@ -2,13 +2,9 @@
 
 namespace App\Controller;
 
-use App\Entity\Album;
-use App\Entity\Media;
-use App\Entity\User;
 use App\Repository\AlbumRepository;
 use App\Repository\MediaRepository;
 use App\Repository\UserRepository;
-use Doctrine\Persistence\ManagerRegistry;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -79,11 +75,12 @@ class HomeController extends AbstractController
         } else {
             // Page d’accueil du portfolio : médias de l’admin uniquement si non bloqué
             $user = $userRepo->findOneBy(['admin' => true]);
-            if (!$user || $user->isBlocked()) {
-                throw $this->createNotFoundException("Portfolio indisponible.");
-            }
+            
 
+           $user = $this->getUser();
+            assert($user instanceof \App\Entity\User);
             $query = $mediaRepo->findByUserQuery($user);
+
         }
 
         $pagination = $paginator->paginate(

@@ -5,18 +5,14 @@ namespace App\Tests\Repository;
 use App\Entity\Media;
 use App\Tests\Functional\CustomWebTestCase;
 
+
+
 class MediaTypeTest extends CustomWebTestCase
 {
     public function testFormThrowsIfUserOptionIsMissing(): void
     {
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('L’utilisateur doit être fourni dans les options.');
-
-        $client = static::createClient();
-        $ina = $this->getIna();
-        $client->loginUser($ina);
-
-        $crawler = $client->request('GET', '/media/add');
 
         /** @var \Symfony\Component\Form\FormFactoryInterface $formFactory */
         $formFactory = static::getContainer()->get('form.factory');
@@ -27,6 +23,7 @@ class MediaTypeTest extends CustomWebTestCase
             // 'user' est volontairement omis ici
         ]);
     }
+
 
     public function testPreSubmitSkipsIfNoUserInData(): void
     {

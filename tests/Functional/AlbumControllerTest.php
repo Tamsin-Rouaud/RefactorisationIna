@@ -2,59 +2,23 @@
 
 namespace App\Tests\Functional;
 
-use App\Entity\User;
+
 use App\Entity\Album;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
 class AlbumControllerTest extends CustomWebTestCase
 {
-    private KernelBrowser $client;
-    private \Doctrine\Persistence\ObjectManager $em;
-    
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->client = static::createClient();
-        $container = $this->client->getContainer();
-
-        $this->loadFixtures([
-            \App\DataFixtures\UserFixtures::class,
-            \App\DataFixtures\AlbumFixtures::class,
-        ], $container);
-
-        /** @var \Doctrine\Persistence\ManagerRegistry $registry */
-        $registry = $container->get('doctrine');
-        $this->em = $registry->getManager();
-
-        $this->loginIna($this->client);
-    }
-
-    private function loginIna(KernelBrowser $client): void
-    {
-        /** @var \Doctrine\Persistence\ManagerRegistry $registry */
-        $registry = self::getContainer()->get('doctrine');
-        $user = $registry->getManager()
-            ->getRepository(User::class)
-            ->findOneBy(['name' => 'Inatest Zaoui']);
-
-        $this->assertNotNull($user, "L'utilisateur admin Ina doit exister en base de données.");
-        $client->loginUser($user);
-    }
-
     public function testIndex(): void
-    {   
+    {
+        $this->client->loginUser($this->getIna());
         $this->client->request('GET', '/admin/album');
         $this->assertResponseIsSuccessful();
         $this->assertSelectorExists('h1');
-        $content = (string) $this->client->getResponse()->getContent();
-        $this->assertStringContainsString('Albums', $content);
-
+        $this->assertStringContainsString('Albums', (string) $this->client->getResponse()->getContent());
     }
 
     public function testAddAlbumFormDisplayed(): void
     {
+        $this->client->loginUser($this->getIna());
         $crawler = $this->client->request('GET', '/admin/album/add');
         $this->assertResponseIsSuccessful();
         $this->assertSelectorExists('form');
@@ -62,13 +26,13 @@ class AlbumControllerTest extends CustomWebTestCase
 
     public function testAddAlbum(): void
     {
+        $ina = $this->getIna();
+        $this->client->loginUser($ina);
+
         $crawler = $this->client->request('GET', '/admin/album/add');
         $form = $crawler->selectButton('Ajouter')->form();
         $form['album[name]'] = 'Nouvel album test';
-        $form['album[user]'] = (string) $this->getIna()->getId();
-
-
-
+        $form['album[user]'] = (string) $ina->getId();
 
         $this->client->submit($form);
         $this->assertResponseRedirects('/admin/album');
@@ -80,13 +44,15 @@ class AlbumControllerTest extends CustomWebTestCase
     public function testUpdateAlbum(): void
     {
         $ina = $this->getIna();
+        $this->client->loginUser($ina);
 
         $album = new Album();
         $album->setName('Album original');
         $album->setUser($ina);
 
-        $this->em->persist($album);
-        $this->em->flush();
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($album);
+        $em->flush();
 
         $crawler = $this->client->request('GET', "/admin/album/update/{$album->getId()}");
         $form = $crawler->selectButton('Modifier')->form();
@@ -98,17 +64,18 @@ class AlbumControllerTest extends CustomWebTestCase
         $this->assertSelectorTextContains('body', 'Titre mis à jour');
     }
 
-
     public function testDeleteAlbum(): void
     {
         $ina = $this->getIna();
+        $this->client->loginUser($ina);
 
         $album = new Album();
         $album->setName('À supprimer');
         $album->setUser($ina);
 
-        $this->em->persist($album);
-        $this->em->flush();
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($album);
+        $em->flush();
 
         $this->client->request('GET', "/admin/album/delete/{$album->getId()}");
         $this->assertResponseRedirects('/admin/album');
@@ -118,10 +85,8 @@ class AlbumControllerTest extends CustomWebTestCase
 
     public function testAddAlbumAsNonAdminSetsUserAutomatically(): void
     {
-        $user = $this->em->getRepository(User::class)->findOneBy(['name' => 'Jean Dupont']);
-        self::assertInstanceOf(User::class, $user); // ✅ PHPStan comprend que $user n’est plus nullable
-
-        $this->client->loginUser($user);
+        $invite = $this->getInvite();
+        $this->client->loginUser($invite);
 
         $crawler = $this->client->request('GET', '/admin/album/add');
         $form = $crawler->selectButton('Ajouter')->form([
@@ -131,87 +96,98 @@ class AlbumControllerTest extends CustomWebTestCase
         $this->client->submit($form);
         $this->assertResponseRedirects('/admin/album');
 
-        /** @var Album|null $album */
-        $album = $this->em->getRepository(Album::class)->findOneBy(['name' => 'Album utilisateur simple']);
-        self::assertInstanceOf(Album::class, $album); // ✅ plus sûr et plus clair
-
-        $this->assertSame($user->getId(), $album->getUser()?->getId());
+        $repo = $this->getDoctrine()->getRepository(Album::class);
+        $album = $repo->findOneBy(['name' => 'Album utilisateur simple']);
+        $this->assertInstanceOf(Album::class, $album);
+        $this->assertSame($invite->getId(), $album->getUser()?->getId());
     }
 
     public function testAddAlbumWithInvalidFormStaysOnPage(): void
     {
-        $crawler = $this->client->request('GET', '/admin/album/add');
+        $this->client->loginUser($this->getIna());
 
-        // On soumet uniquement le champ `name`, vide
+        $crawler = $this->client->request('GET', '/admin/album/add');
         $form = $crawler->selectButton('Ajouter')->form([
-            'album[name]' => '', // vide => invalide
-            // NE FOURNIS PAS album[user] même si champ visible
+            'album[name]' => '',
         ]);
 
         $this->client->submit($form);
-
         $this->assertResponseStatusCodeSame(422);
-
-        
     }
 
     public function testUpdateAlbumWithInvalidIdThrows404(): void
     {
-        $this->client->request('GET', '/admin/album/update/999999'); // ID inexistant
+        $this->client->loginUser($this->getIna());
+        $this->client->request('GET', '/admin/album/update/999999');
         $this->assertResponseStatusCodeSame(404);
     }
 
     public function testDeleteAlbumWithInvalidIdThrows404(): void
     {
-        $this->client->request('GET', '/admin/album/delete/999999'); // ID très élevé qui n’existe pas
+        $this->client->loginUser($this->getIna());
+        $this->client->request('GET', '/admin/album/delete/999999');
         $this->assertResponseStatusCodeSame(404);
     }
 
     public function testGetAlbumsByUserReturnsJson(): void
     {
-        $user = $this->getIna(); // ou n’importe quel user non bloqué
+        $user = $this->getIna();
 
-        // On crée un album pour ce user
         $album = new Album();
         $album->setName('Album Ajax Test');
         $album->setUser($user);
-        $this->em->persist($album);
-        $this->em->flush();
 
-        // Requête GET vers la route AJAX
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($album);
+        $em->flush();
+
+        $this->client->loginUser($user); // sécurité potentielle
         $this->client->request('GET', '/admin/albums/by-user/' . $user->getId());
 
-        // Vérifications
         $this->assertResponseIsSuccessful();
         $this->assertResponseHeaderSame('Content-Type', 'application/json');
 
-        $responseContent = $this->client->getResponse()->getContent();
-        $this->assertNotEmpty($responseContent);
+        $json = $this->client->getResponse()->getContent();
+        $this->assertIsString($json);
 
-        $data = json_decode($responseContent, true);
+        $data = json_decode($json, true);
         $this->assertIsArray($data);
         $this->assertGreaterThan(0, count($data));
-        $albumNames = array_column($data, 'name');
-        $this->assertContains('Album Ajax Test', $albumNames);
-
+        $this->assertContains('Album Ajax Test', array_column($data, 'name'));
     }
 
     public function testGetAlbumsByBlockedUserReturnsEmptyArray(): void
-    {
-        $user = $this->getIna(); // Utilisateur non bloqué par défaut
-        $user->setIsBlocked(true);
-        $this->em->flush(); // Appliquer le blocage en base
+{
+    $blockedUser = $this->getBlockedUser();
+    $this->client->loginUser($this->getIna());
 
-        $this->client->request('GET', '/admin/albums/by-user/' . $user->getId());
+    $this->client->request('GET', '/admin/albums/by-user/' . $blockedUser->getId());
 
-        $this->assertResponseIsSuccessful();
-        $this->assertResponseHeaderSame('Content-Type', 'application/json');
+    $this->assertResponseIsSuccessful();
+    $json = $this->client->getResponse()->getContent();
+    $this->assertIsString($json); // 🔒 Vérifie que c'est bien une string
 
-        $content = $this->client->getResponse()->getContent();
-        $this->assertIsString($content); // assure PHPStan que ce n’est pas false
-        $data = json_decode($content, true);
+    $albums = json_decode($json, true);
+    // on vérifie bien que le tableau est vide
+    $this->assertSame([], $albums, 'Un utilisateur bloqué ne doit retourner aucun album');
+}
 
-        $this->assertSame([], $data); // Vérifie que rien n'est retourné
-    }
+public function testAddAlbumAsAdmin(): void
+{
+    $ina = $this->getIna();
+    $this->client->loginUser($ina);
+
+    $crawler = $this->client->request('GET', '/admin/album/add');
+    $form = $crawler->selectButton('Ajouter')->form([
+        'album[name]' => 'Album de test',
+        'album[user]' => $ina->getId(),
+    ]);
+
+    $this->client->submit($form);
+    $this->assertResponseRedirects('/admin/album');
+
+    $album = $this->getDoctrine()->getRepository(Album::class)->findOneBy(['name' => 'Album de test']);
+    $this->assertNotNull($album);
+}
 
 }

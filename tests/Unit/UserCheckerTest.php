@@ -9,6 +9,8 @@ use Symfony\Component\Security\Core\Exception\CustomUserMessageAccountStatusExce
 use Symfony\Component\Security\Core\User\UserInterface;
 
 
+
+
 class UserCheckerTest extends TestCase
 {
     public function testCheckPreAuthWithActiveUser(): void
@@ -39,10 +41,10 @@ class UserCheckerTest extends TestCase
     public function testCheckPreAuthWithUnsupportedUser(): void
     {
         $checker = new UserChecker();
+        /** @var UserInterface&\PHPUnit\Framework\MockObject\MockObject $mock */
+$mock = $this->createMock(UserInterface::class);
 
-        $mock = $this->createMock(UserInterface::class);
 
-       
         $this->expectNotToPerformAssertions();
         $checker->checkPreAuth($mock);
     }

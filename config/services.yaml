@@ -5,6 +5,10 @@ services:
     _defaults:
         autowire: true
         autoconfigure: true
+        public: true
+    test.Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface:
+        public: true
+        synthetic: true
     App\DataFixtures\:
         resource: '../src/DataFixtures'
         tags: ['doctrine.fixture.orm']

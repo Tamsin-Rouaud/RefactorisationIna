@@ -24,7 +24,6 @@ class MediaTypeTest extends CustomWebTestCase
         ]);
     }
 
-
     public function testPreSubmitSkipsIfNoUserInData(): void
     {
         /** @var \Symfony\Component\Form\FormFactoryInterface $formFactory */

@@ -9,6 +9,15 @@
 
             {{ form_row(form.title) }}
             {{ form_row(form.file) }}
+
+{% if form.file.vars.errors|length > 0 %}
+    <div class="form-error-message">
+        {% for error in form.file.vars.errors %}
+            <p>{{ error.message }}</p>
+        {% endfor %}
+    </div>
+{% endif %}
+
             {{ form_row(form.album) }}
 
             {% if form.user is defined %}

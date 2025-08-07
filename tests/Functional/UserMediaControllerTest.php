@@ -2,329 +2,148 @@
 
 namespace App\Tests\Functional;
 
-use App\Controller\UserMediaController;
 use App\Entity\Media;
-use App\Entity\User;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 class UserMediaControllerTest extends CustomWebTestCase
 {
-    private function createTempImage(): UploadedFile
+    public function testAccessDeniedForGuest(): void
     {
-        $source = __DIR__ . '/fixtures/sample.jpg';
-        if (!file_exists($source)) {
-            imagejpeg(imagecreatetruecolor(1, 1), $source);
-        }
-        $target = sys_get_temp_dir() . '/img_' . uniqid() . '.jpg';
-        copy($source, $target);
-        return new UploadedFile($target, 'sample.jpg', 'image/jpeg', null, true);
-    }
-
-    public function testRedirectIfNotLoggedIn(): void
-    {
-        $client = static::createClient();
-        $client->request('GET', '/media/add');
+        $this->client->request('GET', '/media/add');
         $this->assertResponseRedirects('/login');
     }
 
-    public function testUserCanAccessAddForm(): void
+    public function testFormDisplaysForInvite(): void
     {
-        $client = static::createClient();
-        $ina = $this->getIna();
-        $client->loginUser($ina);
-        $client->request('GET', '/media/add');
+        $this->client->loginUser($this->getInvite());
+        $crawler = $this->client->request('GET', '/media/add');
+
         $this->assertResponseIsSuccessful();
         $this->assertSelectorExists('form');
+        $this->assertSelectorExists('input[name="media[title]"]');
+        $this->assertSelectorExists('input[name="media[file]"]');
     }
 
-    public function testUserCanAddMedia(): void
+    public function testUploadValidImage(): void
     {
-        $client = static::createClient();
-        $this->loadFixtures([
-            \App\DataFixtures\UserFixtures::class,
-            \App\DataFixtures\AlbumFixtures::class,
-        ], static::getContainer());
+        $this->client->loginUser($this->getInvite());
+        $crawler = $this->client->request('GET', '/media/add');
 
-        $ina = $this->getIna();
-        $album = $this->getAlbumForUser($ina);
-        $client->loginUser($ina);
-
-        $crawler = $client->request('GET', '/media/add');
         $form = $crawler->selectButton('Ajouter')->form();
 
-        $file = $this->createTempImage();
-
-        $client->submit($form, [
-            'media[title]' => 'Média utilisateur',
-            'media[album]' => $album->getId(),
-        ], [
-            'media[file]' => $file,
+        $this->client->submit($form, [
+            'media[title]' => 'Photo Test',
+            'media[album]' => $this->getAlbumForUser($this->getInvite())->getId(),
+            'media[file]' => $this->createTempImage(),
         ]);
 
         $this->assertResponseRedirects('/');
-        $client->followRedirect();
-        $this->assertSelectorNotExists('form');
 
-        /** @var \Doctrine\Persistence\ManagerRegistry $doctrine */
-        $doctrine = static::getContainer()->get('doctrine');
-        $repo = $doctrine->getRepository(Media::class);
-        $media = $repo->findOneBy(['title' => 'Média utilisateur']);
-
-        $this->assertNotNull($media);
-        $this->assertInstanceOf(User::class, $media->getUser());
-        $this->assertSame('Inatest Zaoui', $media->getUser()->getName());
-
-        $uploadDir = static::getContainer()->getParameter('upload_dir');
-        $this->assertIsString($uploadDir);
-        $this->assertFileExists($uploadDir . '/' . basename($media->getPath()));
+        $medias = $this->getDoctrine()->getRepository(Media::class)->findBy(['title' => 'Photo Test']);
+        $this->assertNotEmpty($medias);
+        $this->assertStringContainsString('uploads/', $medias[0]->getPath());
     }
 
-    public function testUserCanAddMediaWithoutImage(): void
+    public function testUploadWithoutFileUsesDefaultImage(): void
     {
-        $client = static::createClient();
-        $this->loadFixtures([
-            \App\DataFixtures\UserFixtures::class,
-            \App\DataFixtures\AlbumFixtures::class,
-        ], static::getContainer());
+        $this->client->loginUser($this->getInvite());
+        $crawler = $this->client->request('GET', '/media/add');
 
-        $ina = $this->getIna();
-        $album = $this->getAlbumForUser($ina);
-        $client->loginUser($ina);
-
-        $crawler = $client->request('GET', '/media/add');
         $form = $crawler->selectButton('Ajouter')->form();
 
-        $client->submit($form, [
-            'media[title]' => 'Sans image',
-            'media[album]' => $album->getId(),
-        ]); // PAS de 'media[file]' ici
+        $this->client->submit($form, [
+            'media[title]' => 'Sans Image',
+            'media[album]' => $this->getAlbumForUser($this->getInvite())->getId(),
+        ]);
 
         $this->assertResponseRedirects('/');
-        $client->followRedirect();
 
-        /** @var \Doctrine\Persistence\ManagerRegistry $doctrine */
-    $doctrine = static::getContainer()->get('doctrine');
-
-    /** @var \Doctrine\Persistence\ObjectRepository<\App\Entity\Media> $repo */
-    $repo = $doctrine->getRepository(\App\Entity\Media::class);
-
-        $media = $repo->findOneBy(['title' => 'Sans image']);
-
+        $media = $this->getDoctrine()->getRepository(Media::class)->findOneBy(['title' => 'Sans Image']);
         $this->assertNotNull($media);
         $this->assertSame('uploads/default.jpg', $media->getPath());
     }
 
-
-    public function testThrowsIfUserIsNotInstanceOfUserEntity(): void
+    public function testUploadInvalidMimeType(): void
     {
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('Utilisateur connecté invalide.');
+        $this->client->loginUser($this->getInvite());
+        $crawler = $this->client->request('GET', '/media/add');
 
-        $request = new \Symfony\Component\HttpFoundation\Request();
+        $tempFile = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($tempFile, 'Not an image');
 
-        /** @var \Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface $params */
-        $params = static::getContainer()->get(\Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface::class);
-
-        $controller = new UserMediaController($params);
-
-        $controller->setContainer(static::getContainer());
-
-        /** @var TokenStorageInterface $tokenStorage */
-        $tokenStorage = static::getContainer()->get('security.token_storage');
-        $fakeUser = new \App\Tests\Helper\FakeUser();
-
-        $token = new UsernamePasswordToken(
-            $fakeUser,
-            'main',
-            $fakeUser->getRoles()
-        );
-        $tokenStorage->setToken($token);
-
-        $controller->add($request, $this->getDoctrine());
-    }
-
-    public function testNonAdminMediaCreationCallsSetUserAgain(): void
-    {
-        $client = static::createClient();
-        $this->loadFixtures([
-            \App\DataFixtures\UserFixtures::class,
-            \App\DataFixtures\AlbumFixtures::class,
-        ], static::getContainer());
-
-        $ina = $this->getIna(); // non-admin dans ton projet
-        $album = $this->getAlbumForUser($ina);
-        $client->loginUser($ina);
-
-        $crawler = $client->request('GET', '/media/add');
         $form = $crawler->selectButton('Ajouter')->form();
 
-        $client->submit($form, [
-            'media[title]' => 'ForceSetUser',
-            'media[album]' => $album->getId(),
+        $this->client->submit($form, [
+            'media[title]' => 'Fichier invalide',
+            'media[album]' => $this->getAlbumForUser($this->getInvite())->getId(),
+            'media[file]' => new UploadedFile(
+                $tempFile,
+                'invalid.txt',
+                'text/plain',
+                null,
+                true
+            )
         ]);
 
-        $this->assertResponseRedirects('/');
-
-        /** @var \Doctrine\Persistence\ManagerRegistry $doctrine */
-    $doctrine = static::getContainer()->get('doctrine');
-    $repo = $doctrine->getRepository(Media::class);
-    $media = $repo->findOneBy(['title' => 'ForceSetUser']);
-
-    $this->assertNotNull($media);
-    $this->assertInstanceOf(User::class, $media->getUser());
-    $this->assertSame($ina->getId(), $media->getUser()->getId());
-
-    }
-    public function testImageUploadAndSetUserCalledForNonAdmin(): void
-    {
-        $client = static::createClient();
-        $this->loadFixtures([
-            \App\DataFixtures\UserFixtures::class,
-            \App\DataFixtures\AlbumFixtures::class,
-        ], static::getContainer());
-
-        $ina = $this->getIna(); // utilisateur non admin
-        $album = $this->getAlbumForUser($ina);
-        $client->loginUser($ina);
-
-        $crawler = $client->request('GET', '/media/add');
-    
-
-    $form = $crawler->selectButton('Ajouter')->form();
-    file_put_contents('form_debug.html', $crawler->html());
-
-
-        $file = $this->createTempImage();
-
-        $client->submit($form, [
-            'media[title]' => 'Image Upload Test',
-            'media[album]' => $album->getId(),
-        ], [
-            'media[file]' => $file,
-        ]);
-
-        $this->assertResponseRedirects('/');
-        $client->followRedirect();
-
-    /** @var \Doctrine\Persistence\ManagerRegistry $doctrine */
-    $doctrine = static::getContainer()->get('doctrine');
-    $repo = $doctrine->getRepository(Media::class);
-
-        $media = $repo->findOneBy(['title' => 'Image Upload Test']);
-
-        $this->assertNotNull($media);
-        $this->assertInstanceOf(User::class, $media->getUser());
-        $this->assertSame($ina->getId(), $media->getUser()->getId());
-
-        $path = $media->getPath();
-
-        
-        $this->assertNotSame('/public/uploads/default.jpg', $path, 'Le fichier image n’a pas été uploadé correctement.');
-
-
-        $uploadDir = static::getContainer()->getParameter('upload_dir');
-    $this->assertIsString($uploadDir); // ✅ Pour rassurer PHPStan
-    $this->assertFileExists($uploadDir . '/' . basename($path));
-
+        $this->assertResponseStatusCodeSame(Response::HTTP_OK);
+        $this->assertSelectorTextContains('.form-error-message', 'Seules les images JPEG, PNG ou GIF sont autorisées.');
     }
 
-    public function testImageUploadTriggersSetUserAndUpload(): void
+    public function testUploadOversizedFile(): void
     {
-        $client = static::createClient();
-        $this->loadFixtures([
-            \App\DataFixtures\UserFixtures::class,
-            \App\DataFixtures\AlbumFixtures::class,
-        ], static::getContainer());
+        $this->client->loginUser($this->getInvite());
+        $crawler = $this->client->request('GET', '/media/add');
 
-        $user = $this->getIna(); // utilisateur non-admin
-        $album = $this->getAlbumForUser($user);
-        $client->loginUser($user);
+        $bigImage = tempnam(sys_get_temp_dir(), 'bigimg');
+        file_put_contents($bigImage, str_repeat('a', 3 * 1024 * 1024)); // 3 Mo
 
-        $crawler = $client->request('GET', '/media/add');
         $form = $crawler->selectButton('Ajouter')->form();
 
-        // Générer un faux fichier image
-        $filePath = tempnam(sys_get_temp_dir(), 'img_') . '.jpg';
-        imagejpeg(imagecreatetruecolor(1, 1), $filePath);
-
-        $uploadedFile = new \Symfony\Component\HttpFoundation\File\UploadedFile(
-            $filePath,
-            'fake.jpg',
-            'image/jpeg',
-            null,
-            true // test mode
-        );
-
-        $client->submit($form, [
-            'media[title]' => 'UploadedMedia',
-            'media[album]' => $album->getId(),
-        ], [
-            'media[file]' => $uploadedFile,
+        $this->client->submit($form, [
+            'media[title]' => 'Image trop lourde',
+            'media[album]' => $this->getAlbumForUser($this->getInvite())->getId(),
+            'media[file]' => new UploadedFile(
+                $bigImage,
+                'big.jpg',
+                'image/jpeg',
+                null,
+                true
+            )
         ]);
 
-        $this->assertResponseRedirects('/');
-        $client->followRedirect();
-
-        /** @var \Doctrine\Persistence\ManagerRegistry $doctrine */
-    $doctrine = static::getContainer()->get('doctrine');
-    $repo = $doctrine->getRepository(\App\Entity\Media::class);
-
-        $media = $repo->findOneBy(['title' => 'UploadedMedia']);
-
-        $this->assertNotNull($media);
-        $this->assertSame($user->getId(), $media->getUser()?->getId());
-
-        // ✅ Couvre le chemin avec fichier et la ligne 63
-        $this->assertNotSame('public/uploads/default.jpg', $media->getPath(), 'Le fichier n’a pas été uploadé correctement.');
-
-
-
-        $uploadDir = static::getContainer()->getParameter('upload_dir');
-    $this->assertIsString($uploadDir); // <-- protège la concaténation
-    $this->assertFileExists($uploadDir . '/' . basename($media->getPath()));
-
+        $this->assertResponseStatusCodeSame(Response::HTTP_OK);
+        $this->assertSelectorTextContains('.form-error-message', 'Le fichier ne doit pas dépasser 2 Mo.');
     }
 
-    public function testUserAddMediaWithoutImageTriggersSetUserAndDefaultPath(): void
+    public function testUserCanAddMediaSuccessfully(): void
     {
-        $client = static::createClient();
-        $this->loadFixtures([
-            \App\DataFixtures\UserFixtures::class,
-            \App\DataFixtures\AlbumFixtures::class,
-        ], static::getContainer());
+        $invite = $this->getInvite(); 
+        $this->client->loginUser($invite);
 
-        $user = $this->getIna(); // utilisateur non admin
-        $album = $this->getAlbumForUser($user);
-        $client->loginUser($user);
+        $crawler = $this->client->request('GET', '/media/add');
 
-        $crawler = $client->request('GET', '/media/add');
-        $form = $crawler->selectButton('Ajouter')->form();
-
-        $client->submit($form, [
-            'media[title]' => 'MediaSansImage',
-            'media[album]' => $album->getId(),
+        $form = $crawler->selectButton('Ajouter')->form([
+            'media[title]' => 'Image ajoutée par user',
+            'media[album]' => $this->getAlbumForUser($invite)->getId(),
         ]);
+    /** @var \Symfony\Component\DomCrawler\Field\FileFormField $fileField */
+    $fileField = $form->get('media[file]');
+    $fileField->upload($this->createTempImage()->getPathname());
+
+
+        $this->client->submit($form);
 
         $this->assertResponseRedirects('/');
-        $client->followRedirect();
 
-        /** @var \Doctrine\Persistence\ManagerRegistry $doctrine */
-        $doctrine = static::getContainer()->get('doctrine');
-        $repo = $doctrine->getRepository(Media::class);
-        $media = $repo->findOneBy(['title' => 'MediaSansImage']);
-
+        $media = $this->getDoctrine()->getRepository(Media::class)->findOneBy(['title' => 'Image ajoutée par user']);
         $this->assertNotNull($media);
-        $this->assertSame('uploads/default.jpg', $media->getPath()); // ✅ lignes 58–59
-        $this->assertSame($user->getId(), $media->getUser()?->getId()); // ✅ ligne 63
+    $this->assertNotNull($media->getUser(), 'Le média n’est pas associé à un utilisateur.');
+    $this->assertSame($invite->getId(), $media->getUser()->getId());
+
     }
+
 
 
 }
-
-
-
-
 

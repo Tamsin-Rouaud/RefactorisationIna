@@ -1,10 +1,9 @@
 <?php
-
 namespace App\DataFixtures;
 
 use App\Entity\Media;
-use App\Entity\User;
 use App\Entity\Album;
+use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
@@ -13,45 +12,54 @@ class MediaFixtures extends Fixture implements DependentFixtureInterface
 {
     public function load(ObjectManager $manager): void
     {
-        $ina = $this->getReference('user_ina', User::class);
-        $invite1 = $this->getReference('user_invite1', User::class);
-        $invite2 = $this->getReference('user_invite2', User::class);
+        // Liste des images disponibles 
+        $availableImages = [
+            '0002.jpg', '0003.jpg', '0004.jpg', '0005.jpg', '0006.jpg',
+            '0007.jpg', '0008.jpg', '0009.jpg', '0010.jpg', '0011.jpg',
+        ];
 
-        // On récupère les 5 albums d’Ina
+        // Total d’albums : 5 pour Ina + 2 x 6 pour les invités = 17
+        $totalAlbumsIna = 5;
+        $totalInvites = 6;
         $albums = [];
-        for ($i = 1; $i <= 5; $i++) {
+
+        // Albums d’Ina
+        for ($i = 1; $i <= $totalAlbumsIna; $i++) {
             $albums[] = $this->getReference("album_ina_$i", Album::class);
         }
 
-        // 10 médias d’Ina, dispatchés dans ses albums
-        for ($i = 1; $i <= 10; $i++) {
-            $media = new Media();
-            $media->setTitle("Photo Ina $i");
-            $media->setPath("uploads/media/ina_$i.jpg");
-            $media->setUser($ina);
-            // Dispatch circulaire dans les 5 albums
-            $media->setAlbum($albums[($i - 1) % 5]);
-            $manager->persist($media);
+        // Albums des invités
+        for ($invite = 1; $invite <= $totalInvites; $invite++) {
+            for ($j = 1; $j <= 2; $j++) {
+                $albums[] = $this->getReference("album_invite{$invite}_{$j}", Album::class);
+            }
         }
 
-        // Médias d’invités sans album
-        $media = new Media();
-        $media->setTitle("Photo Invité Actif");
-        $media->setPath("uploads/media/invite1.jpg");
-        $media->setUser($invite1);
-        $media->setAlbum(null);
-        $manager->persist($media);
+        $imageCount = count($availableImages);
+        $imageIndex = 0;
+        $mediaCounter = 1;
 
-        $media = new Media();
-        $media->setTitle("Photo Invité Bloqué");
-        $media->setPath("uploads/media/invite2.jpg");
-        $media->setUser($invite2);
-        $media->setAlbum(null);
-        $manager->persist($media);
+        foreach ($albums as $album) {
+            for ($i = 0; $i < 5; $i++) {
+                $media = new Media();
+                $media->setTitle("Media $mediaCounter - " . $album->getName());
+
+                // Utilisation circulaire des images disponibles
+                $imageFilename = $availableImages[$imageIndex % $imageCount];
+                $media->setPath("uploads/$imageFilename");
+
+                $media->setAlbum($album);
+                $media->setUser($album->getUser());
+
+                $manager->persist($media);
+
+                $imageIndex++;
+                $mediaCounter++;
+            }
+        }
 
         $manager->flush();
     }
-
 
     public function getDependencies(): array
     {

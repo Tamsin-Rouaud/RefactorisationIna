@@ -7,6 +7,8 @@ use App\DataFixtures\UserFixtures;
 use App\DataFixtures\AlbumFixtures;
 use PHPUnit\Framework\TestCase;
 
+
+
 class MediaFixturesTest extends TestCase
 {
     public function testGetDependenciesReturnsCorrectClasses(): void

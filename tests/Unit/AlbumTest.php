@@ -9,6 +9,7 @@ use App\Entity\User;
 use PHPUnit\Framework\TestCase;
 use Doctrine\Common\Collections\ArrayCollection;
 
+
 class AlbumTest extends TestCase
 {
     public function testInitialState(): void

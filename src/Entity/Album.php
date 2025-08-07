@@ -95,7 +95,7 @@ class Album
     public function removeMedia(Media $media): static
     {
         if ($this->medias->removeElement($media)) {
-            // set the owning side to null (unless already changed)
+            
             if ($media->getAlbum() === $this) {
                 $media->setAlbum(null);
             }

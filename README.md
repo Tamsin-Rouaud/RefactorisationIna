@@ -1,4 +1,8 @@
 ![CI Symfony](https://github.com/tamsin-rouaud/RefactorisationIna/actions/workflows/ci.yml/badge.svg)
+![PHP](https://img.shields.io/badge/php-8.2-blue)
+![Symfony](https://img.shields.io/badge/symfony-7.2-black)
+![Coverage ≥95%](https://img.shields.io/badge/coverage-95%25-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 # 📸 Projet Ina Zaoui - Refactorisation Symfony
 
@@ -10,57 +14,21 @@ Ce projet vise à refactoriser le site web de la photographe Ina Zaoui. L’obje
 
 Assurez-vous d’avoir les outils suivants installés :
 
-- PHP ≥ 8.1
+- PHP ≥ 8.2
 - Composer
 - Symfony CLI
 - MySQL ou MariaDB
-- Node.js & npm (si assets à compiler)
 - Un serveur local (Symfony CLI, XAMPP, Laragon…)
 
 ---
-
-
-## 📁 Ressources supplémentaires
-
-Le dossier `public/uploads/` (contenant les images des utilisateurs, médias, albums, etc.) n'est **pas versionné dans Git**, conformément aux bonnes pratiques.
-
-Pour exécuter le projet dans des conditions proches de la production, vous pouvez télécharger le fichier `backup.zip` (≈ 1 Go) contenant :
-
-- Le dossier complet `public/uploads/`
-- Un dump SQL anonymisé de la base de données (au format `.sql`)
-
-👉 **[Télécharger le fichier backup.zip](https://drive.google.com/file/d/1XgcYqDxyAQdvi7EirP2GAk_6OshSDz9N/view?usp=sharing)**
-
-> ℹ️ Placez le contenu du dossier `uploads/` dans `public/uploads`  
-> et importez le fichier `.sql` dans votre base de données locale si nécessaire.
-
----
-
-## 🔐 Identifiants de connexion de démonstration
-
-Des utilisateurs sont pré-créés dans les fixtures pour les besoins des tests fonctionnels. Voici les accès de démonstration :
-
-- **Compte administrateur (Ina)**  
-  Email : `ina@example.com`  
-  Mot de passe : `demoIna123`
-
-- **Invité actif**  
-  Email : `invite1@example.com`  
-  Mot de passe : `inviteDemo`
-
-- **Invité bloqué**  
-  Email : `invite2@example.com`  
-  Mot de passe : `inviteDemo`
-
-> Ces identifiants sont fictifs et utilisés uniquement dans un contexte de test ou de démonstration locale.
 
 ## 🚀 Installation
 
 1. **Cloner le projet** :
 
 ```bash
-git clone https://github.com/Tamsin-Rouaud/RefactorisationIna
-cd projet-photo
+git clone https://github.com/Tamsin-Rouaud/RefactorisationIna.git
+cd RefactorisationIna
 ```
 
 2. **Installer les dépendances PHP** :
@@ -75,7 +43,7 @@ composer install
 cp .env .env.local
 ```
 
-> Modifier `.env.local` pour configurer votre `DATABASE_URL`.
+> Modifiez `.env.local` pour configurer votre `DATABASE_URL`.
 
 4. **Créer la base de données et exécuter les migrations** :
 
@@ -98,49 +66,94 @@ symfony server:start
 
 ---
 
-## 🖼️ Fonctionnalités principales
+## 💾 Données de développement
 
-- ✅ Migration vers Symfony 7.2
-- ✅ Authentification sécurisée via base de données
-- ✅ Gestion des invités (par Ina uniquement)
-  - Ajouter / Bloquer / Supprimer
-- ✅ Vérification avancée des fichiers uploadés
-  - Types MIME validés
-  - Taille max : 2 Mo
-- ✅ Refactorisation du code existant
-- ✅ Implémentation de tests (unitaires & fonctionnels)
-- ✅ Rapport de couverture de tests ≥ 70%
-- ✅ Optimisation des performances (notamment la page “Invités”)
-- ✅ Rapport de performance fourni
-- ✅ Pipeline CI : tests + analyse statique automatisés
-- ✅ Documentation claire : README & CONTRIBUTING
+Un fichier `backup.zip` est fourni pour travailler dans des conditions proches de la production.
+
+👉 **[Télécharger le backup (1 Go)](https://drive.google.com/file/d/1dIq7TLrdnZuXoJUGXnyaSu1fY5t8vWRt/view?usp=drive_link)**
+
+### Contenu :
+- Le dossier `public/uploads/` (photos, albums, avatars…)
+- Un dump SQL anonymisé
+
+### Instructions :
+1. Décompressez l’archive.
+2. Placez le dossier `uploads/` dans `public/uploads`.
+3. Importez le fichier `.sql` dans votre base de données locale (`phpMyAdmin`, DBeaver, etc.).
+
+---
+
+## 🔐 Identifiants de démonstration
+
+Des utilisateurs sont pré-créés pour les tests fonctionnels. Voici les accès fictifs :
+
+- **Administrateur (Ina)**  
+  Nom : `Inatest Zaoui`  
+  Mot de passe : `password`
+
+- **Invité actif**  
+  Nom : `Jean Dupont`  
+  Mot de passe : `password`
+
+- **Invité bloqué**  
+  Nom : `Marie Durand`  
+  Mot de passe : `password`
 
 ---
 
 ## 🧪 Tests
 
-Les tests sont réalisés avec PHPUnit.
+Les tests incluent à la fois des vérifications unitaires/fonctionnelles **et** de l’analyse statique approfondie avec PHPStan (niveau 9).
 
-Lancer les tests :
+Les tests sont réalisés avec **PHPUnit** et **PHPStan**.
+
+### Lancer les tests :
 
 ```bash
 php bin/phpunit
 ```
 
-Générer le rapport de couverture :
+```bash
+php vendor/bin/phpstan analyse
+```
+
+### Générer et ouvrir le rapport de couverture :
 
 ```bash
 php bin/phpunit --coverage-html var/coverage
 ```
 
-Objectif : **≥ 70 %**
-Atteint : **≥ 95 %**
+Ouvrez le fichier suivant dans un navigateur :
+
+```bash
+php var/coverage/index.html
+```
+ou clic droit sur le fichier index.html dans le dossier "var/coverage" et "Ouvrir avec votre navigateur"
+
+🎯 Objectif de couverture : **≥ 70 %**  
+✅ Couverture atteinte : **≥ 95 %**
+
+---
+
+## 🖼️ Fonctionnalités principales
+
+- ✅ Migration vers Symfony 7.2
+- ✅ Authentification via base de données
+- ✅ Gestion des invités (ajout, blocage, suppression)
+- ✅ Vérification avancée des fichiers uploadés (type + taille max 2 Mo)
+- ✅ Refactorisation du code existant
+- ✅ Implémentation de tests unitaires et fonctionnels
+- ✅ Rapport de couverture de tests ≥ 95 %
+- ✅ Optimisation des performances (notamment la page “Invités”)
+- ✅ Rapport de performance fourni
+- ✅ Intégration continue via GitHub Actions
+- ✅ Documentation claire : README & CONTRIBUTING
 
 ---
 
 ## ⚙️ Outils & technologies
 
-- Symfony 7.2
+- Symfony 7.3
 - PHP 8.2.12
 - Doctrine ORM
 - PHPUnit
@@ -158,4 +171,4 @@ Pour contribuer efficacement au projet, merci de consulter le fichier [`CONTRIBU
 
 ## 📄 Licence
 
-Projet réalisé dans le cadre d’une mission fictive pour Ina Zaoui, photographe. Ce projet fait partie de la formation développeur web.
+Projet réalisé dans le cadre d’une mission fictive pour Ina Zaoui, photographe. Ce projet fait partie de la formation développeur web OpenClassrooms.

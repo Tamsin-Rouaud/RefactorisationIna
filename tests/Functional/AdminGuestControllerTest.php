@@ -2,39 +2,15 @@
 
 namespace App\Tests\Functional;
 
-use App\DataFixtures\UserFixtures;
 use App\Entity\User;
-use App\Repository\UserRepository;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
 class AdminGuestControllerTest extends CustomWebTestCase
 {
-    private KernelBrowser $client;
-    private \Doctrine\Persistence\ObjectManager $em;
-    private UserRepository $userRepository;
-
-    protected function setUp(): void
-    {
-        $this->client = static::createClient();
-        $container = static::getContainer();
-
-        $this->loadFixtures([
-            UserFixtures::class,
-        ], $container);
-
-        /** @var \Doctrine\Persistence\ManagerRegistry $registry */
-        $registry = $container->get('doctrine');
-        $this->em = $registry->getManager();
-
-        /** @var UserRepository $repo */
-        $repo = self::getContainer()->get(UserRepository::class);
-        $this->userRepository = $repo;
-
-    }
-
     private function loginAsName(string $name): User
     {
-        $user = $this->userRepository->findOneBy(['name' => $name]);
+        /** @var \App\Repository\UserRepository $repo */
+        $repo = $this->getDoctrine()->getRepository(User::class);
+        $user = $repo->findOneBy(['name' => $name]);
         $this->assertNotNull($user, "L'utilisateur {$name} doit exister.");
         $this->client->loginUser($user);
         return $user;
@@ -49,7 +25,6 @@ class AdminGuestControllerTest extends CustomWebTestCase
         $this->assertSelectorExists('h1');
         $content = (string) $this->client->getResponse()->getContent();
         $this->assertStringContainsString('Gestion des invités', $content);
-
     }
 
     public function testGuestCannotAccessGuestManagementPage(): void
@@ -61,16 +36,19 @@ class AdminGuestControllerTest extends CustomWebTestCase
 
     public function testAdminCanBlockGuest(): void
     {
-        $this->loginAsName('Inatest Zaoui');
-        $guest = $this->userRepository->findOneBy(['email' => 'invite1@example.com']);
-        $this->assertNotNull($guest);
+        $admin = $this->loginAsName('Inatest Zaoui');
+
+        $repo = $this->getDoctrine()->getRepository(User::class);
+        $guest = $repo->findOneBy(['email' => 'invite1@example.com']);
+        $this->assertInstanceOf(User::class, $guest);
+
         $guest->setIsBlocked(false);
-        $this->em->flush();
+        $this->getDoctrine()->getManager()->flush();
 
         $this->client->request('GET', '/admin/guests/' . $guest->getId() . '/toggle-block');
-        $this->em->clear();
+        $this->getDoctrine()->getManager()->clear();
 
-        $updated = $this->userRepository->find($guest->getId());
+        $updated = $repo->find($guest->getId());
         $this->assertInstanceOf(User::class, $updated);
         $this->assertTrue($updated->isBlocked());
 
@@ -79,16 +57,19 @@ class AdminGuestControllerTest extends CustomWebTestCase
 
     public function testAdminCanUnblockGuest(): void
     {
-        $this->loginAsName('Inatest Zaoui');
-        $guest = $this->userRepository->findOneBy(['email' => 'invite2@example.com']);
-        $this->assertNotNull($guest);
+        $admin = $this->loginAsName('Inatest Zaoui');
+
+        $repo = $this->getDoctrine()->getRepository(User::class);
+        $guest = $repo->findOneBy(['email' => 'invite2@example.com']);
+        $this->assertInstanceOf(User::class, $guest);
+
         $guest->setIsBlocked(true);
-        $this->em->flush();
+        $this->getDoctrine()->getManager()->flush();
 
         $this->client->request('GET', '/admin/guests/' . $guest->getId() . '/toggle-block');
-        $this->em->clear();
+        $this->getDoctrine()->getManager()->clear();
 
-        $updated = $this->userRepository->find($guest->getId());
+        $updated = $repo->find($guest->getId());
         $this->assertInstanceOf(User::class, $updated);
         $this->assertFalse($updated->isBlocked());
 
@@ -111,9 +92,10 @@ class AdminGuestControllerTest extends CustomWebTestCase
         $this->client->submit($form);
 
         $this->assertResponseRedirects('/admin/guests');
-        $this->em->clear();
-        $created = $this->userRepository->findOneBy(['email' => $email]);
-        $this->assertNotNull($created);
+        $this->getDoctrine()->getManager()->clear();
+
+        $created = $this->getDoctrine()->getRepository(User::class)->findOneBy(['email' => $email]);
+        $this->assertInstanceOf(User::class, $created);
         $this->assertFalse($created->isAdmin());
     }
 
@@ -126,16 +108,21 @@ class AdminGuestControllerTest extends CustomWebTestCase
         $guest->setEmail('delete_' . uniqid() . '@example.com');
         $guest->setPassword('password');
         $guest->setAdmin(false);
-        $this->em->persist($guest);
-        $this->em->flush();
+
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($guest);
+        $em->flush();
 
         $crawler = $this->client->request('GET', '/admin/guests');
         $form = $crawler->filter('form[action="/admin/guests/' . $guest->getId() . '/delete"]')->form();
         $this->client->submit($form);
 
         $this->assertResponseRedirects('/admin/guests');
-        $this->em->clear();
-        $this->assertNull($this->userRepository->find($guest->getId()));
+        $em->clear();
+
+        $this->assertNull(
+            $this->getDoctrine()->getRepository(User::class)->find($guest->getId())
+        );
     }
 
     public function testToggleBlockWithInvalidIdReturns404(): void
@@ -148,8 +135,8 @@ class AdminGuestControllerTest extends CustomWebTestCase
     public function testGuestCannotDeleteGuest(): void
     {
         $this->loginAsName('Jean Dupont');
-        $guest = $this->userRepository->findOneBy(['email' => 'invite1@example.com']);
-        $this->assertNotNull($guest);
+        $guest = $this->getDoctrine()->getRepository(User::class)->findOneBy(['email' => 'invite1@example.com']);
+        $this->assertInstanceOf(User::class, $guest);
 
         $this->client->request('POST', '/admin/guests/' . $guest->getId() . '/delete');
         $this->assertResponseStatusCodeSame(403);
@@ -177,7 +164,5 @@ class AdminGuestControllerTest extends CustomWebTestCase
         $this->assertSelectorTextContains('body', 'Le mot de passe est obligatoire.');
         $this->assertSelectorTextContains('body', 'Le nom est obligatoire.');
         $this->assertSelectorTextContains('body', 'L’email est invalide.');
-
     }
-
 }

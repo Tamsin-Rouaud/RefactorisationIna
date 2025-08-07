@@ -24,7 +24,9 @@ class Media
 
     #[ORM\ManyToOne(targetEntity: Album::class, inversedBy: 'medias', fetch: "EAGER")]
     #[ORM\JoinColumn(nullable: true)]
+    #[Assert\NotNull(message: 'Un album est requis.')]
     private ?Album $album = null;
+
 
     #[ORM\Column]
     private string $path;

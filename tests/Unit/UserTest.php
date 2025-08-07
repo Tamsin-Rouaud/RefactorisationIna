@@ -7,6 +7,8 @@ use App\Entity\Album;
 use PHPUnit\Framework\TestCase;
 use Doctrine\Common\Collections\ArrayCollection;
 
+
+
 class UserTest extends TestCase
 {
     public function testSettersAndGetters(): void
@@ -68,7 +70,7 @@ class UserTest extends TestCase
         $this->assertInstanceOf(ArrayCollection::class, $user->getMedias());
     }
 
-    public function testSetMediasReplacesCollection(): void
+    public function testSetMediasCorrectlyReplacesOldCollection(): void
     {
         $user = new User();
 

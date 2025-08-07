@@ -6,13 +6,21 @@
         <a href="{{ path('admin_media_index') }}" class="btn btn-primary">Retour</a>
     </div>
 
+{% for error in form.vars.errors %}
+    <div class="form-error-message">{{ error.message }}</div>
+{% endfor %}
+
     {{ form_start(form) }}
 
         {{ form_row(form.user) }}
-        {{ form_row(form.album) }}
+<div class="form-error-message">
+    {{ form_errors(form.album) }}
+</div>
+
         {{ form_row(form.title) }}
-        {{ form_row(form.file) }}
-        {{ form_errors(form.file) }}
+<div class="form-error-message">
+    {{ form_errors(form.file) }}
+</div>
 
         <button type="submit" class="btn btn-primary">Ajouter</button>
     {{ form_end(form) }}

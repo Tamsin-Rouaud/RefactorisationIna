@@ -28,12 +28,12 @@ class MediaType extends AbstractType
                 'required' => false,
                 'mapped' => false,
                 'constraints' => [
-                    new File([
-                        'maxSize' => '2M',
-                        'mimeTypes' => ['image/jpeg', 'image/png', 'image/gif'],
-                        'mimeTypesMessage' => 'Seules les images JPEG, PNG ou GIF sont autorisées.',
-                        'maxSizeMessage' => 'Le fichier ne doit pas dépasser 2 Mo.',
-                    ])
+                    new File(
+                        maxSize:'2M',
+                        mimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+                        mimeTypesMessage: 'Seules les images JPEG, PNG ou GIF sont autorisées.',
+                        maxSizeMessage: 'Le fichier ne doit pas dépasser 2 Mo.',
+                    )
                 ]
             ])
             ->add('title', TextType::class, [

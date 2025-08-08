@@ -20,14 +20,14 @@ class GuestType extends AbstractType
     ->add('name')
     ->add('email', EmailType::class, [
         'constraints' => [
-            new Assert\NotBlank(['message' => 'L\'email est obligatoire.']),
+            new Assert\NotBlank(message:'L\'email est obligatoire.'),
             
         ],
     ])
     ->add('password', PasswordType::class, [
         'constraints' => [
             
-            new Assert\Length(['min' => 6, 'minMessage' => 'Le mot de passe doit contenir au moins {{ limit }} caractères.']),
+            new Assert\Length(min: 6, minMessage: 'Le mot de passe doit contenir au moins {{ limit }} caractères.'),
         ],
     ])
     ->add('description', TextareaType::class, [

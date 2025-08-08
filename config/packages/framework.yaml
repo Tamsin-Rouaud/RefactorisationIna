@@ -24,6 +24,9 @@ framework:
     # messenger:
     #     reset_on_message: true
 
+    profiler:
+        collect_serializer_data: true
+
 when@test:
     framework:
         test: true

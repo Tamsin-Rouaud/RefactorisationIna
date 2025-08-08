@@ -147,6 +147,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->admin ? ['ROLE_ADMIN'] : ['ROLE_USER'];
     }
 
+    #[\Deprecated]
     public function eraseCredentials(): void {}
 
     // Pour éviter les erreurs d'Intelephense dans VS Code :

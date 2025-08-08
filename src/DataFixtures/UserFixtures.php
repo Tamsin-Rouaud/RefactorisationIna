@@ -30,7 +30,8 @@ class UserFixtures extends Fixture
         $blockedAdmin = new User();
         $blockedAdmin->setName('Admin Bloqué');
         $blockedAdmin->setEmail('admin.bloque@example.com');
-        $blockedAdmin->setPassword('password'); 
+        $blockedAdmin->setPassword($this->passwordHasher->hashPassword($blockedAdmin, 'password'));
+
         $blockedAdmin->setAdmin(true);
         $blockedAdmin->setIsBlocked(true);
 

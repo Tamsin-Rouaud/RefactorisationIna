@@ -2,7 +2,7 @@ name: CI Symfony
 
 on:
   push:
-    branches: [ main, ci/github-actions ]
+    branches: [ main, ci/github-actions, test/Ajout-tests ]
   pull_request:
     branches: [ main ]
 
@@ -15,7 +15,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: test_database
+          MYSQL_DATABASE: ina_zaoui_test
         ports:
           - 3306:3306
         options: >-
@@ -25,7 +25,8 @@ jobs:
           --health-retries=3
 
     env:
-      DATABASE_URL: "mysql://root:root@127.0.0.1:3306/test_database"
+      DATABASE_URL: "mysql://root:root@127.0.0.1:3306/ina_zaoui_test"
+
 
     steps:
       - name: Checkout code
@@ -43,6 +44,10 @@ jobs:
       
         run: composer install --prefer-dist --no-progress 
 
+      - name: Drop database
+        run: php bin/console doctrine:database:drop --force --if-exists --env=test
+
+
       - name: Create database
         run: php bin/console doctrine:database:create --env=test
 
@@ -51,6 +56,13 @@ jobs:
 
       - name: Load fixtures
         run: php bin/console doctrine:fixtures:load --no-interaction --env=test
+
+      - name: Debug DATABASE_URL
+        run: echo "DATABASE_URL=$DATABASE_URL"
+
+      - name: Debug DATABASE_URL
+        run: echo "DATABASE_URL=${{ env.DATABASE_URL }}"
+
 
       - name: Run tests
         run: php bin/phpunit

@@ -67,5 +67,14 @@ class MediaRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+public function findAllFromUnblockedAlbumsQuery(): Query
+{
+    return $this->createQueryBuilder('m')
+        ->join('m.album', 'a')
+        ->join('a.user', 'u')
+        ->where('u.isBlocked = false')
+        ->orderBy('m.album', 'DESC')
+        ->getQuery();
+}
 
 }

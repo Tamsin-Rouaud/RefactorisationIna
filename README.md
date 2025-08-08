@@ -43,7 +43,33 @@ composer install
 cp .env .env.local
 ```
 
-> Modifiez `.env.local` pour configurer votre `DATABASE_URL`.
+> Modifiez ensuite `.env.local` pour ajouter vos informations réelles de connexion à la base de données.
+
+---
+
+### ⚙️ Configuration de la base de données
+
+Symfony utilise un fichier `.env.local` pour définir les variables d’environnement propres à chaque développeur.
+
+**Exemple de ligne à adapter dans `.env.local` :**
+
+```env
+DATABASE_URL="mysql://utilisateur:mot_de_passe@127.0.0.1/nom_de_la_base?serverVersion=8.0&charset=utf8mb4"
+```
+
+| Élément                  | Description                                |
+|--------------------------|--------------------------------------------|
+| `utilisateur`            | Nom d'utilisateur MySQL                    |
+| `mot_de_passe`           | Mot de passe de l’utilisateur              |
+| `127.0.0.1`              | Adresse du serveur MySQL (souvent localhost) |
+| `nom_de_la_base`         | Nom de votre base de données               |
+| `serverVersion=8.0`      | Version de votre serveur MySQL/MariaDB     |
+| `charset=utf8mb4`        | Jeu de caractères recommandé               |
+
+> 💡 Pour connaître la version exacte de votre serveur :  
+> connectez-vous à MySQL et tapez `SELECT VERSION();`
+
+---
 
 4. **Créer la base de données et exécuter les migrations** :
 
@@ -91,27 +117,27 @@ Des utilisateurs sont pré-créés pour les tests fonctionnels. Voici les accès
   Nom : `Inatest Zaoui`  
   Mot de passe : `password`
 
-- **Invité actif**  
-  Nom : `Jean Dupont`  
+- **Invités actifs**  
+  Nom : `Jean Dupont`, `Aline Giraud`, `René Lataupe`, `Elodie Martin`
   Mot de passe : `password`
 
-- **Invité bloqué**  
-  Nom : `Marie Durand`  
+- **Invités bloqués**  
+  Nom : `Marie Durand`, `Lucie Cromagnon`, `Utilisateur Bloqué`
   Mot de passe : `password`
 
 ---
 
 ## 🧪 Tests
 
-Les tests incluent à la fois des vérifications unitaires/fonctionnelles **et** de l’analyse statique approfondie avec PHPStan (niveau 9).
+Le projet comprend des tests **unitaires**, **fonctionnels**, ainsi qu’une **analyse statique avancée** avec PHPStan (niveau 9).
 
-Les tests sont réalisés avec **PHPUnit** et **PHPStan**.
-
-### Lancer les tests :
+### Exécuter les tests :
 
 ```bash
 php bin/phpunit
 ```
+
+### Lancer l’analyse statique :
 
 ```bash
 php vendor/bin/phpstan analyse

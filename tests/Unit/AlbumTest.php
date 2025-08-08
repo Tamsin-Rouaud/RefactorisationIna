@@ -5,7 +5,6 @@ namespace App\Tests\Entity;
 use App\Entity\Album;
 use App\Entity\Media;
 use App\Entity\User;
-
 use PHPUnit\Framework\TestCase;
 use Doctrine\Common\Collections\ArrayCollection;
 

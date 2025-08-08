@@ -58,4 +58,6 @@ class AlbumFixtures extends Fixture implements DependentFixtureInterface
             UserFixtures::class,
         ];
     }
+
+   
 }

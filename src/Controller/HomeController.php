@@ -58,43 +58,78 @@ class HomeController extends AbstractController
         ]);
     }
 
-    #[Route('/portfolio/{id}', name: 'portfolio')]
-    public function portfolio(AlbumRepository $albumRepo, UserRepository $userRepo, MediaRepository $mediaRepo, PaginatorInterface $paginator, Request $request, ?int $id = null): Response 
-    {
-        $albums = $albumRepo->findAllVisible();
-        $album = $id ? $albumRepo->find($id) : null;
+    // #[Route('/portfolio/{id}', name: 'portfolio')]
+    // public function portfolio(AlbumRepository $albumRepo, UserRepository $userRepo, MediaRepository $mediaRepo, PaginatorInterface $paginator, Request $request, ?int $id = null): Response 
+    // {
+    //     $albums = $albumRepo->findAllVisible();
+    //     $album = $id ? $albumRepo->find($id) : null;
 
-        // Si un album est sélectionné, on vérifie si son propriétaire est bloqué
-        if ($album !== null) {
-            $owner = $album->getUser();
-            if (!$owner || $owner->isBlocked()) {
-                throw $this->createNotFoundException('Album inaccessible.');
-            }
+    //     // Si un album est sélectionné, on vérifie si son propriétaire est bloqué
+    //     if ($album !== null) {
+    //         $owner = $album->getUser();
+    //         if (!$owner || $owner->isBlocked()) {
+    //             throw $this->createNotFoundException('Album inaccessible.');
+    //         }
 
-            $query = $mediaRepo->findByAlbumQuery($album);
-        } else {
-            // Page d’accueil du portfolio : médias de l’admin uniquement si non bloqué
-            $user = $userRepo->findOneBy(['admin' => true]);
+    //         $query = $mediaRepo->findByAlbumQuery($album);
+    //     } else {
+    //         // Page d’accueil du portfolio : médias de l’admin uniquement si non bloqué
+    //         $user = $userRepo->findOneBy(['admin' => true]);
             
 
-           $user = $this->getUser();
-            assert($user instanceof \App\Entity\User);
-            $query = $mediaRepo->findByUserQuery($user);
+    //        $user = $this->getUser();
+    //         assert($user instanceof \App\Entity\User);
+    //         $query = $mediaRepo->findByUserQuery($user);
 
+    //     }
+
+    //     $pagination = $paginator->paginate(
+    //         $query,
+    //         $request->query->getInt('page', 1),
+    //         9
+    //     );
+
+    //     return $this->render('front/portfolio.html.twig', [
+    //         'albums' => $albums,
+    //         'album' => $album,
+    //         'pagination' => $pagination,
+    //     ]);
+    // }
+
+#[Route('/portfolio/{id}', name: 'portfolio')]
+public function portfolio(AlbumRepository $albumRepo,MediaRepository $mediaRepo, PaginatorInterface $paginator, Request $request, ?int $id = null): Response 
+{
+    $albums = $albumRepo->findAllVisible();
+    $album = $id ? $albumRepo->find($id) : null;
+
+    if ($album !== null) {
+        $owner = $album->getUser();
+
+        if (!$owner || $owner->isBlocked()) {
+            throw $this->createNotFoundException('Album inaccessible.');
         }
 
-        $pagination = $paginator->paginate(
-            $query,
-            $request->query->getInt('page', 1),
-            9
-        );
-
-        return $this->render('front/portfolio.html.twig', [
-            'albums' => $albums,
-            'album' => $album,
-            'pagination' => $pagination,
-        ]);
+        $query = $mediaRepo->findByAlbumQuery($album);
+    } else {
+        $query = $mediaRepo->findAllFromUnblockedAlbumsQuery();
     }
+
+    $pagination = $paginator->paginate(
+        $query,
+        $request->query->getInt('page', 1),
+        9
+    );
+
+    return $this->render('front/portfolio.html.twig', [
+        'albums' => $albums,
+        'album' => $album,
+        'pagination' => $pagination,
+    ]);
+}
+
+
+
+
 
 
     #[Route('/about', name: 'about')]

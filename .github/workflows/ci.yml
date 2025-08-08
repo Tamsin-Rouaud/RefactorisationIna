@@ -15,7 +15,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: ina_zaoui_test
+          MYSQL_DATABASE: test_database
         ports:
           - 3306:3306
         options: >-
@@ -25,7 +25,7 @@ jobs:
           --health-retries=3
 
     env:
-      DATABASE_URL: "mysql://root:root@127.0.0.1:3306/ina_zaoui_test"
+      DATABASE_URL: "mysql://root:root@127.0.0.1:3306/test_database"
 
 
     steps:
@@ -38,6 +38,13 @@ jobs:
           php-version: 8.2
           extensions: pdo_mysql
           coverage: none
+
+      - name: Affiche les variables d’environnement utiles
+        run: |
+          echo "APP_ENV=$APP_ENV"
+          echo "DATABASE_URL=$DATABASE_URL"
+          printenv | grep DATABASE
+
 
 
       - name: Install Composer dependencies
@@ -57,11 +64,7 @@ jobs:
       - name: Load fixtures
         run: php bin/console doctrine:fixtures:load --no-interaction --env=test
 
-      - name: Debug DATABASE_URL
-        run: echo "DATABASE_URL=$DATABASE_URL"
 
-      - name: Debug DATABASE_URL
-        run: echo "DATABASE_URL=${{ env.DATABASE_URL }}"
 
 
       - name: Run tests

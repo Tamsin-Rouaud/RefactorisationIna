@@ -1,6 +1,6 @@
 ![CI Symfony](https://github.com/tamsin-rouaud/RefactorisationIna/actions/workflows/ci.yml/badge.svg)
 ![PHP](https://img.shields.io/badge/php-8.2-blue)
-![Symfony](https://img.shields.io/badge/symfony-7.2-black)
+![Symfony](https://img.shields.io/badge/symfony-7.3-black)
 ![Coverage ≥95%](https://img.shields.io/badge/coverage-95%25-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 

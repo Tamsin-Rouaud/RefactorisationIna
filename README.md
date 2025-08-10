@@ -184,7 +184,7 @@ ou clic droit sur le fichier index.html dans le dossier "var/coverage" et "Ouvri
 - Doctrine ORM
 - PHPUnit
 - GitHub Actions (CI)
-- PHPStan / PHP CS Fixer
+- PHPStan
 - Web Profiler
 
 ---
